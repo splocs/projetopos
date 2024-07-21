@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import yfinance as yf
-from PIL import Image
 from datetime import date
 
 # Configurando a largura da página
@@ -29,16 +28,6 @@ def pegar_valores_online(sigla_acao):
 # Definindo data de início e fim
 DATA_INICIO = '2017-01-01'
 DATA_FIM = date.today().strftime('%Y-%m-%d')
-
-# Logo
-logo_path = "logo.png"
-logo = Image.open(logo_path)
-
-# Exibir o logo no aplicativo Streamlit
-st.image(logo, width=250)
-
-# Exibir o logo na sidebar
-st.sidebar.image(logo, width=150)
 
 
 # Criando a sidebar
