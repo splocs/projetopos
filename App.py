@@ -102,7 +102,7 @@ def exibir_info_empresa(info, dividendos):
    
     # Colocar o vídeo dentro de um expander
     with st.expander("Clique para assistir ao vídeo explicativo", expanded=False):
-        st.video("https://www.youtube.com/watch?v=M1KWn0vFxeo")
+        st.video("https://www.youtube.com/watch?v=M1KWn0vFxeo", width=560, height=315)
     
     st.write(f"**Preço atual:** {info.get('currentPrice', 'N/A')}")
     st.write(f"**Preço Fechamento Anterior:** {info.get('previousClose', 'N/A')}")
