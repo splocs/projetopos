@@ -102,18 +102,17 @@ def exibir_info_empresa(info, dividendos):
             st.write("Nenhum diretor encontrado.")
 
     st.markdown("#### Preço")  
-    # Colocar o vídeo dentro de um expander
-with st.expander("Clique para assistir ao vídeo explicativo", expanded=False):
-    st.video("https://www.youtube.com/watch?v=M1KWn0vFxeo")
-    st.write(f"**Preço atual:** {info.get('currentPrice', 'N/A')}")
-    st.write(f"**Preço Fechamento Anterior:** {info.get('previousClose', 'N/A')}")
-    st.write(f"**Preço Fechamento Anterior Mercado Regular:** {info.get('regularMarketPreviousClose', 'N/A')}")
-    st.write(f"**Preço de Compra Atual(Bid):** {info.get('bid', 'N/A')}")
-    st.write(f"**Preço de Venda Atual (Ask):** {info.get('ask', 'N/A')}")
-    st.write(f"**Preço Médio dos últimos 50 dias:** {info.get('fiftyDayAverage', 'N/A')}")
-    st.write(f"**Preço Médio dos últimos 200 dias:** {info.get('twoHundredDayAverage', 'N/A')}")
-    st.write(f"**Máxima das últimas 52 semanas:** {info.get('fiftyTwoWeekHigh', 'N/A')}")
-   
+   # Colocar o vídeo dentro de um expander
+   with st.expander("Clique para assistir ao vídeo explicativo", expanded=False):
+       st.video("https://www.youtube.com/watch?v=M1KWn0vFxeo")
+       st.write(f"**Preço atual:** {info.get('currentPrice', 'N/A')}")
+       st.write(f"**Preço Fechamento Anterior:** {info.get('previousClose', 'N/A')}")
+       st.write(f"**Preço Fechamento Anterior Mercado Regular:** {info.get('regularMarketPreviousClose', 'N/A')}")
+       st.write(f"**Preço de Compra Atual(Bid):** {info.get('bid', 'N/A')}")
+       st.write(f"**Preço de Venda Atual (Ask):** {info.get('ask', 'N/A')}")
+       st.write(f"**Preço Médio dos últimos 50 dias:** {info.get('fiftyDayAverage', 'N/A')}")
+       st.write(f"**Preço Médio dos últimos 200 dias:** {info.get('twoHundredDayAverage', 'N/A')}")
+       st.write(f"**Máxima das últimas 52 semanas:** {info.get('fiftyTwoWeekHigh', 'N/A')}")
 
 
   
