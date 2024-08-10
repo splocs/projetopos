@@ -43,8 +43,6 @@ def criar_grafico_dividendos(dividendos):
 
     return fig
 
-
-
 # Função para formatar a data
 def formatar_data(data):
     if data is not None:
@@ -56,7 +54,6 @@ def pegar_dados_acoes():
     path = 'https://raw.githubusercontent.com/splocs/meu-repositorio/main/acoes.csv'
     return pd.read_csv(path, delimiter=';')
 
-# Remova o decorador
 def pegar_valores_online(sigla_acao):
     df = yf.download(sigla_acao, DATA_INICIO, DATA_FIM, progress=False)
     df.reset_index(inplace=True)
@@ -102,21 +99,19 @@ def exibir_info_empresa(info, dividendos):
             st.write("Nenhum diretor encontrado.")
 
     st.markdown("#### Preço")  
-   # Colocar o vídeo dentro de um expander
-   with st.expander("Clique para assistir ao vídeo explicativo", expanded=False):
-       st.video("https://www.youtube.com/watch?v=M1KWn0vFxeo")
-       st.write(f"**Preço atual:** {info.get('currentPrice', 'N/A')}")
-       st.write(f"**Preço Fechamento Anterior:** {info.get('previousClose', 'N/A')}")
-       st.write(f"**Preço Fechamento Anterior Mercado Regular:** {info.get('regularMarketPreviousClose', 'N/A')}")
-       st.write(f"**Preço de Compra Atual(Bid):** {info.get('bid', 'N/A')}")
-       st.write(f"**Preço de Venda Atual (Ask):** {info.get('ask', 'N/A')}")
-       st.write(f"**Preço Médio dos últimos 50 dias:** {info.get('fiftyDayAverage', 'N/A')}")
-       st.write(f"**Preço Médio dos últimos 200 dias:** {info.get('twoHundredDayAverage', 'N/A')}")
-       st.write(f"**Máxima das últimas 52 semanas:** {info.get('fiftyTwoWeekHigh', 'N/A')}")
-
-
-  
- 
+   
+    # Colocar o vídeo dentro de um expander
+    with st.expander("Clique para assistir ao vídeo explicativo", expanded=False):
+        st.video("https://www.youtube.com/watch?v=M1KWn0vFxeo")
+    
+    st.write(f"**Preço atual:** {info.get('currentPrice', 'N/A')}")
+    st.write(f"**Preço Fechamento Anterior:** {info.get('previousClose', 'N/A')}")
+    st.write(f"**Preço Fechamento Anterior Mercado Regular:** {info.get('regularMarketPreviousClose', 'N/A')}")
+    st.write(f"**Preço de Compra Atual(Bid):** {info.get('bid', 'N/A')}")
+    st.write(f"**Preço de Venda Atual (Ask):** {info.get('ask', 'N/A')}")
+    st.write(f"**Preço Médio dos últimos 50 dias:** {info.get('fiftyDayAverage', 'N/A')}")
+    st.write(f"**Preço Médio dos últimos 200 dias:** {info.get('twoHundredDayAverage', 'N/A')}")
+    st.write(f"**Máxima das últimas 52 semanas:** {info.get('fiftyTwoWeekHigh', 'N/A')}")
 
 # Definindo data de início e fim
 DATA_INICIO = '2010-01-01'
