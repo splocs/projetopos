@@ -102,6 +102,8 @@ def exibir_info_empresa(info, dividendos):
             st.write("Nenhum diretor encontrado.")
 
     st.markdown("#### Preço")  
+    # Exibir o vídeo do YouTube
+    st.video("https://www.youtube.com/watch?v=M1KWn0vFxeo")
     st.write(f"**Preço atual:** {info.get('currentPrice', 'N/A')}")
     st.write(f"**Preço Fechamento Anterior:** {info.get('previousClose', 'N/A')}")
     st.write(f"**Preço Fechamento Anterior Mercado Regular:** {info.get('regularMarketPreviousClose', 'N/A')}")
