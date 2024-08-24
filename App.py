@@ -274,42 +274,6 @@ with st.expander("Clique para assistir ao vídeo explicativo sobre Médias Móve
     
 
 
-# Calculando o Estocástico Lento
-df_valores_mensal = calcular_estocastico_lento(df_valores_mensal)
-
-# Criando gráfico do Estocástico Lento
-st.subheader('Gráfico Estocástico Lento (Mensal)')
-fig = go.Figure()
-
-# %K
-fig.add_trace(go.Scatter(x=df_valores_mensal.index,
-                         y=df_valores_mensal['%K'],
-                         name='%K',
-                         line_color='blue'))
-
-# %D
-fig.add_trace(go.Scatter(x=df_valores_mensal.index,
-                         y=df_valores_mensal['%D'],
-                         name='%D',
-                         line_color='red'))
-
-# Linha de sobrecompra e sobrevenda
-fig.add_hline(y=80, line_dash="dash", line_color="green", annotation_text="Sobrecompra", annotation_position="top left")
-fig.add_hline(y=20, line_dash="dash", line_color="red", annotation_text="Sobrevenda", annotation_position="bottom left")
-
-# Configurando layout do gráfico
-fig.update_layout(title='Estocástico Lento (Mensal)',
-                   xaxis_title='Data',
-                   yaxis_title='Valor',
-                   xaxis_rangeslider_visible=False)
-
-config = configurar_grafico(fig)
-st.plotly_chart(fig, use_container_width=False, config=config)
-
-# Adicionando expander com vídeo explicativo para Estocástico Lento (a ser adicionado, se necessário)
-with st.expander("Clique para assistir ao vídeo explicativo sobre Estocástico Lento", expanded=False):
-    st.video("https://www.youtube.com/watch?v=exemplo_video_estocastico_lento")  # Substitua com o link do vídeo apropriado
-
 
 
 
