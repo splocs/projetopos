@@ -155,7 +155,7 @@ exibir_info_empresa(info_acao, dividendos)
 # Pegar os valores históricos da ação
 df_valores = pegar_valores_online(sigla_acao_escolhida)
 
-# Criando gráfico de preços
+# Criando gráfico de preços de fechamento e abertura
 st.subheader('Gráfico de Preços')
 fig = go.Figure()
 
@@ -172,15 +172,20 @@ fig.add_trace(go.Scatter(x=df_valores['Date'],
 config = configurar_grafico(fig)
 st.plotly_chart(fig, use_container_width=False, config=config)
 
-# Calculando a média móvel simples (SMA) de 50 dias e 200 dias
+# Adicionando expander com vídeo explicativo para Preço de Fechamento e Abertura
+with st.expander("Clique para assistir ao vídeo explicativo sobre Preço de Fechamento e Abertura", expanded=False):
+    st.video("https://www.youtube.com/watch?v=sdhO_eKyA-0")
+
+# Calculando as médias móveis simples (SMA) de 50 dias e 200 dias
 df_valores['SMA_50'] = df_valores['Close'].rolling(window=50).mean()
 df_valores['SMA_200'] = df_valores['Close'].rolling(window=200).mean()
 
-# Calculando a média móvel exponencial (EMA) de 50 dias e 200 dias
+# Calculando as médias móveis exponenciais (EMA) de 50 dias e 200 dias
 df_valores['EMA_50'] = df_valores['Close'].ewm(span=50, adjust=False).mean()
 df_valores['EMA_200'] = df_valores['Close'].ewm(span=200, adjust=False).mean()
 
 # Criando o gráfico de preços com as médias móveis
+st.subheader('Gráfico com Médias Móveis')
 fig = go.Figure()
 
 # Adicionando os preços de fechamento
@@ -217,9 +222,33 @@ fig.update_layout(title='Análise de Tendência de Longo Prazo',
                    yaxis_title='Preço',
                    xaxis_rangeslider_visible=False)
 
-# Exibindo o gráfico no Streamlit
 config = configurar_grafico(fig)
 st.plotly_chart(fig, use_container_width=False, config=config)
+
+# Adicionando expander com vídeo explicativo para Médias Móveis
+with st.expander("Clique para assistir ao vídeo explicativo sobre Médias Móveis", expanded=False):
+    st.video("https://www.youtube.com/watch?v=uPAqMymYYGs")
+
+# Determinando a tendência com base nas médias móveis
+tendencia = None
+if df_valores['Close'].iloc[-1] > df_valores['SMA_50'].iloc[-1] and df_valores['Close'].iloc[-1] > df_valores['SMA_200'].iloc[-1]:
+    tendencia = 'Tendência de alta'
+    explicacao_tendencia = "O preço de fechamento está acima das médias móveis de curto e longo prazo, sugerindo uma tendência de alta consistente."
+elif df_valores['Close'].iloc[-1] < df_valores['SMA_50'].iloc[-1] and df_valores['Close'].iloc[-1] < df_valores['SMA_200'].iloc[-1]:
+    tendencia = 'Tendência de baixa'
+    explicacao_tendencia = "O preço de fechamento está abaixo das médias móveis de curto e longo prazo, indicando uma tendência de baixa persistente."
+elif df_valores['Close'].iloc[-1] > df_valores['SMA_50'].iloc[-1] and df_valores['Close'].iloc[-1] < df_valores['SMA_200'].iloc[-1]:
+    tendencia = 'Tendência de alta em formação'
+    explicacao_tendencia = "O preço de fechamento está acima da média móvel de curto prazo, mas abaixo da média móvel de longo prazo, sugerindo uma possível tendência de alta em desenvolvimento."
+elif df_valores['Close'].iloc[-1] < df_valores['SMA_50'].iloc[-1] and df_valores['Close'].iloc[-1] > df_valores['SMA_200'].iloc[-1]:
+    tendencia = 'Tendência de baixa em formação'
+    explicacao_tendencia = "O preço de fechamento está abaixo da média móvel de curto prazo, mas acima da média móvel de longo prazo, indicando uma possível tendência de baixa em desenvolvimento."
+else:
+    tendencia = 'Estabilização ou acumulação'
+    explicacao_tendencia = "O preço de fechamento está entre as médias móveis de curto e longo prazo, sugerindo um período de estabilização ou acumulação no mercado."
+
+# Exibindo mensagem com a tendência e explicação
+st.markdown(f"A ação está atualmente em **{tendencia}**. {explicacao_tendencia}")
 
 
     
