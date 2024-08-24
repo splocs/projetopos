@@ -225,9 +225,7 @@ fig.update_layout(title='Análise de Tendência de Longo Prazo',
 config = configurar_grafico(fig)
 st.plotly_chart(fig, use_container_width=False, config=config)
 
-# Adicionando expander com vídeo explicativo para Médias Móveis
-with st.expander("Clique para assistir ao vídeo explicativo sobre Médias Móveis", expanded=False):
-    st.video("https://www.youtube.com/watch?v=uPAqMymYYGs")
+
 
 # Determinando a tendência com base nas médias móveis
 tendencia = None
@@ -250,7 +248,9 @@ else:
 # Exibindo mensagem com a tendência e explicação
 st.markdown(f"A ação está atualmente em **{tendencia}**. {explicacao_tendencia}")
 
-
+# Adicionando expander com vídeo explicativo para Médias Móveis
+with st.expander("Clique para assistir ao vídeo explicativo sobre Médias Móveis", expanded=False):
+    st.video("https://www.youtube.com/watch?v=uPAqMymYYGs")
     
 
 
