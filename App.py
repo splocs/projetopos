@@ -272,14 +272,7 @@ st.markdown(f"A ação está atualmente em **{tendencia}**. {explicacao_tendenci
 with st.expander("Clique para assistir ao vídeo explicativo sobre Médias Móveis", expanded=False):
     st.video("https://www.youtube.com/watch?v=uPAqMymYYGs")
     
-# Convertendo os dados para frequência mensal
-df_valores_mensal = df_valores.resample('M', on='Date').agg({
-    'Open': 'first',
-    'High': 'max',
-    'Low': 'min',
-    'Close': 'last',
-    'Volume': 'sum'
-}).dropna()
+
 
 # Calculando o Estocástico Lento
 df_valores_mensal = calcular_estocastico_lento(df_valores_mensal)
