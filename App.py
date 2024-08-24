@@ -19,6 +19,26 @@ st.set_page_config(
     }
 )
 
+def configurar_grafico(fig):
+    fig.update_layout(
+        showlegend=True,
+        xaxis_title=None,
+        yaxis_title=None,
+        title_x=0.5,
+        title_y=0.9,
+        margin=dict(l=20, r=20, t=50, b=20),
+        xaxis=dict(fixedrange=True),
+        yaxis=dict(fixedrange=True),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        ),
+    )
+    return {'displayModeBar': False, 'scrollZoom': False}
+
 def criar_grafico_dividendos(dividendos):
     fig = px.bar(dividendos, x=dividendos.index, y='Dividends', title="Evolução dos Dividendos", 
                   labels={'index': '', 'Dividends': ''}, color_discrete_sequence=['blue'])
