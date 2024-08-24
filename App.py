@@ -4,8 +4,7 @@ import yfinance as yf
 from PIL import Image
 from datetime import date
 import plotly.express as px
-import plotly.graph_objs as go
-import numpy as np
+import plotly.graph_objects as go
 
 # Configurando a largura da página
 st.set_page_config(
@@ -24,31 +23,26 @@ def criar_grafico_dividendos(dividendos):
     fig = px.bar(dividendos, x=dividendos.index, y='Dividends', title="Evolução dos Dividendos", 
                   labels={'index': '', 'Dividends': ''}, color_discrete_sequence=['blue'])
     fig.update_layout(
-        showlegend=False,  # Remove a legenda
-        xaxis_title=None,  # Remove o título do eixo x
-        yaxis_title=None,  # Remove o título do eixo y
-        title_x=0.5,  # Centraliza o título
-        title_y=0.9,  # Ajusta a posição do título no eixo y
-        margin=dict(l=20, r=20, t=50, b=20),  # Ajusta as margens
-        xaxis=dict(fixedrange=True),  # Desabilita o zoom no eixo x
-        yaxis=dict(fixedrange=True)  # Desabilita o zoom no eixo y
+        showlegend=False,
+        xaxis_title=None,
+        yaxis_title=None,
+        title_x=0.5,
+        title_y=0.9,
+        margin=dict(l=20, r=20, t=50, b=20),
+        xaxis=dict(fixedrange=True),
+        yaxis=dict(fixedrange=True)
     )
-    
-    # Remove o menu do Plotly
     fig.show(config={
-        'displayModeBar': False,  # Remove o menu do Plotly
-        'scrollZoom': False  # Desabilita o zoom com o scroll
+        'displayModeBar': False,
+        'scrollZoom': False
     })
-
     return fig
 
-# Função para formatar a data
 def formatar_data(data):
     if data is not None:
         return pd.to_datetime(data, unit='s').strftime('%d-%m-%Y')
     return 'N/A'
 
-# Função para pegar os dados das ações
 def pegar_dados_acoes():
     path = 'https://raw.githubusercontent.com/splocs/meu-repositorio/main/acoes.csv'
     return pd.read_csv(path, delimiter=';')
@@ -63,13 +57,11 @@ def pegar_valores_online_periodo_definido(sigla_acao, data_inicio, data_fim):
     df.reset_index(inplace=True)
     return df
 
-# Função para pegar as informações da empresa
 def pegar_info_empresa(sigla_acao):
     ticker = yf.Ticker(sigla_acao)
     info = ticker.info
     return info, ticker
 
-# Função para exibir informações da empresa
 def exibir_info_empresa(info, dividendos):
     st.write(f"{info.get('shortName', 'N/A')}") 
     st.write(f"**Nome completo:** {info.get('longName', 'N/A')}")
@@ -85,7 +77,6 @@ def exibir_info_empresa(info, dividendos):
     st.write(f"Moeda financeira: {info.get('financialCurrency', 'N/A')}")
     st.write(f"**Descrição:** {info.get('longBusinessSummary', 'N/A')}")
     
-    # Exibição dos diretores dentro de um expander sem borda
     with st.expander("Diretores da Empresa", expanded=False):
         directors = info.get('companyOfficers', [])
         if directors:
@@ -99,7 +90,6 @@ def exibir_info_empresa(info, dividendos):
 
     st.markdown("#### Preço")  
    
-    # Colocar o vídeo dentro de um expander
     with st.expander("Clique para assistir ao vídeo explicativo", expanded=False):
         st.video("https://www.youtube.com/watch?v=M1KWn0vFxeo")
     
@@ -112,80 +102,19 @@ def exibir_info_empresa(info, dividendos):
     st.write(f"**Preço Médio dos últimos 200 dias:** {info.get('twoHundredDayAverage', 'N/A')}")
     st.write(f"**Máxima das últimas 52 semanas:** {info.get('fiftyTwoWeekHigh', 'N/A')}")
 
-    # Adição dos indicadores técnicos
-    st.header("Indicadores Técnicos")
-
-    # Pegar os valores online
-    df = pegar_valores_online(sigla_acao_escolhida)
-    
-    # Função para calcular indicadores técnicos
-    def calcular_indicadores(df):
-        df['MA7'] = df['Close'].rolling(window=7).mean()
-        df['MA21'] = df['Close'].rolling(window=21).mean()
-        df['MA200'] = df['Close'].rolling(window=200).mean()
-        df['RSI'] = 100 - (100 / (1 + df['Close'].pct_change().apply(lambda x: np.nan if x == 0 else x).rolling(window=14).mean()))
-        df['L14'] = df['Low'].rolling(window=14).min()
-        df['H14'] = df['High'].rolling(window=14).max()
-        df['%K'] = 100 * ((df['Close'] - df['L14']) / (df['H14'] - df['L14']))
-        df['%D'] = df['%K'].rolling(window=3).mean()
-        df['Bol_lower'] = df['Close'].rolling(window=20).mean() - 2 * df['Close'].rolling(window=20).std()
-        df['Bol_upper'] = df['Close'].rolling(window=20).mean() + 2 * df['Close'].rolling(window=20).std()
-        df['Trix'] = 100 * pd.Series(df['Close'].ewm(span=15, adjust=False).mean().diff()).ewm(span=15, adjust=False).mean().diff().ewm(span=15, adjust=False).mean() / df['Close'].ewm(span=15, adjust=False).mean().shift(1)
-        return df
-    
-    df = calcular_indicadores(df)
-
-    # Função para criar os gráficos
-    def criar_grafico(df, tipo_grafico):
-        if tipo_grafico == 'Cruzamento de Médias Móveis':
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=df['Date'], y=df['Close'], mode='lines', name='Preço Fechamento'))
-            fig.add_trace(go.Scatter(x=df['Date'], y=df['MA7'], mode='lines', name='MA7'))
-            fig.add_trace(go.Scatter(x=df['Date'], y=df['MA21'], mode='lines', name='MA21'))
-            fig.add_trace(go.Scatter(x=df['Date'], y=df['MA200'], mode='lines', name='MA200'))
-            fig.update_layout(title='Cruzamento de Médias Móveis')
-        
-        elif tipo_grafico == 'Índice de Força Relativa (RSI)':
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=df['Date'], y=df['RSI'], mode='lines', name='RSI'))
-            fig.update_layout(title='Índice de Força Relativa (RSI)')
-
-        elif tipo_grafico == 'Estocástico Lento':
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=df['Date'], y=df['%K'], mode='lines', name='%K'))
-            fig.add_trace(go.Scatter(x=df['Date'], y=df['%D'], mode='lines', name='%D'))
-            fig.update_layout(title='Estocástico Lento')
-
-        elif tipo_grafico == 'Bandas de Bollinger':
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=df['Date'], y=df['Close'], mode='lines', name='Preço Fechamento'))
-            fig.add_trace(go.Scatter(x=df['Date'], y=df['Bol_upper'], mode='lines', name='Bol_upper'))
-            fig.add_trace(go.Scatter(x=df['Date'], y=df['Bol_lower'], mode='lines', name='Bol_lower'))
-            fig.update_layout(title='Bandas de Bollinger')
-        
-        elif tipo_grafico == 'TRIX':
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=df['Date'], y=df['Trix'], mode='lines', name='TRIX'))
-            fig.update_layout(title='TRIX')
-
-        return fig
-
-    # Criar expanders para cada gráfico
-    with st.expander("Cruzamento de Médias Móveis"):
-        st.plotly_chart(criar_grafico(df, 'Cruzamento de Médias Móveis'))
-
-    with st.expander("Índice de Força Relativa (RSI)"):
-        st.plotly_chart(criar_grafico(df, 'Índice de Força Relativa (RSI)'))
-
-    with st.expander("Estocástico Lento"):
-        st.plotly_chart(criar_grafico(df, 'Estocástico Lento'))
-
-    with st.expander("Bandas de Bollinger"):
-        st.plotly_chart(criar_grafico(df, 'Bandas de Bollinger'))
-
-    with st.expander("TRIX"):
-        st.plotly_chart(criar_grafico(df, 'TRIX'))
-
+def configurar_grafico(fig):
+    fig.update_layout(title='Análise de Tendência de Longo Prazo',
+                   xaxis_title='Data',
+                   yaxis_title='Preço',
+                   xaxis_rangeslider_visible=False)
+    fig.update_layout(legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="right",
+        x=1
+    ))
+    return {'displayModeBar': False, 'scrollZoom': False}
 
 # Definindo data de início e fim
 DATA_INICIO = '2010-01-01'
@@ -222,6 +151,75 @@ dividendos = ticker.dividends
 
 # Exibir as informações da empresa e o histórico de dividendos
 exibir_info_empresa(info_acao, dividendos)
+
+# Pegar os valores históricos da ação
+df_valores = pegar_valores_online(sigla_acao_escolhida)
+
+# Criando gráfico de preços
+st.subheader('Gráfico de Preços')
+fig = go.Figure()
+
+fig.add_trace(go.Scatter(x=df_valores['Date'],
+                         y=df_valores['Close'],
+                         name='Preço Fechamento',
+                         line_color='yellow'))
+
+fig.add_trace(go.Scatter(x=df_valores['Date'],
+                         y=df_valores['Open'],
+                         name='Preço Abertura',
+                         line_color='blue'))
+
+config = configurar_grafico(fig)
+st.plotly_chart(fig, use_container_width=False, config=config)
+
+# Calculando a média móvel simples (SMA) de 50 dias e 200 dias
+df_valores['SMA_50'] = df_valores['Close'].rolling(window=50).mean()
+df_valores['SMA_200'] = df_valores['Close'].rolling(window=200).mean()
+
+# Calculando a média móvel exponencial (EMA) de 50 dias e 200 dias
+df_valores['EMA_50'] = df_valores['Close'].ewm(span=50, adjust=False).mean()
+df_valores['EMA_200'] = df_valores['Close'].ewm(span=200, adjust=False).mean()
+
+# Criando o gráfico de preços com as médias móveis
+fig = go.Figure()
+
+# Adicionando os preços de fechamento
+fig.add_trace(go.Scatter(x=df_valores['Date'],
+                         y=df_valores['Close'],
+                         name='Preço Fechamento',
+                         line_color='blue'))
+
+# Adicionando as médias móveis simples
+fig.add_trace(go.Scatter(x=df_valores['Date'],
+                         y=df_valores['SMA_50'],
+                         name='SMA 50 (Tendência de curto prazo)',
+                         line_color='red'))
+
+fig.add_trace(go.Scatter(x=df_valores['Date'],
+                         y=df_valores['SMA_200'],
+                         name='SMA 200 (Tendência de longo prazo)',
+                         line_color='green'))
+
+# Adicionando as médias móveis exponenciais
+fig.add_trace(go.Scatter(x=df_valores['Date'],
+                         y=df_valores['EMA_50'],
+                         name='EMA 50 (Tendência de curto prazo)',
+                         line_color='purple'))
+
+fig.add_trace(go.Scatter(x=df_valores['Date'],
+                         y=df_valores['EMA_200'],
+                         name='EMA 200 (Tendência de longo prazo)',
+                         line_color='orange'))
+
+# Configurando layout do gráfico
+fig.update_layout(title='Análise de Tendência de Longo Prazo',
+                   xaxis_title='Data',
+                   yaxis_title='Preço',
+                   xaxis_rangeslider_visible=False)
+
+# Exibindo o gráfico no Streamlit
+config = configurar_grafico(fig)
+st.plotly_chart(fig, use_container_width=False, config=config)
 
 
     
