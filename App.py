@@ -77,6 +77,13 @@ def pegar_valores_online_periodo_definido(sigla_acao, data_inicio, data_fim):
     df.reset_index(inplace=True)
     return df
 
+def calcular_estocastico_lento(df, n=14):
+    df['L14'] = df['Low'].rolling(window=n).min()
+    df['H14'] = df['High'].rolling(window=n).max()
+    df['%K'] = 100 * ((df['Close'] - df['L14']) / (df['H14'] - df['L14']))
+    df['%D'] = df['%K'].rolling(window=3).mean()
+    return df
+
 def pegar_info_empresa(sigla_acao):
     ticker = yf.Ticker(sigla_acao)
     info = ticker.info
