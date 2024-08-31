@@ -201,7 +201,7 @@ st.plotly_chart(fig, use_container_width=False, config=config)
 
 # Adicionando expander com vídeo explicativo para Preço de Fechamento e Abertura
 with st.expander("Clique para assistir ao vídeo explicativo sobre Preço de Fechamento e Abertura", expanded=False):
-    st.video("https://youtu.be/M1KWn0vFxeo")
+    st.video("https://www.youtube.com/watch?v=z59Rf9xNpFY")
 
 # Calculando as médias móveis simples (SMA) de 50 dias e 200 dias
 df_valores['SMA_50'] = df_valores['Close'].rolling(window=50).mean()
@@ -277,7 +277,7 @@ st.markdown(f"A ação está atualmente em **{tendencia}**. {explicacao_tendenci
 
 # Adicionando expander com vídeo explicativo para Médias Móveis
 with st.expander("Clique para assistir ao vídeo explicativo sobre Médias Móveis", expanded=False):
-    st.video("https://youtu.be/M1KWn0vFxeo")
+    st.video("https://www.youtube.com/watch?v=dUdYE2aIS00")
 
 # Convertendo os dados para frequência mensal
 df_valores_mensal = df_valores.resample('M', on='Date').agg({
@@ -322,7 +322,7 @@ st.plotly_chart(fig, use_container_width=False, config=config)
 
 # Adicionando expander com vídeo explicativo para Estocástico Lento (a ser adicionado, se necessário)
 with st.expander("Clique para assistir ao vídeo explicativo sobre Estocástico Lento", expanded=False):
-    st.video("https://youtu.be/M1KWn0vFxeo")  # Substitua com o link do vídeo apropriado
+    st.video("https://www.youtube.com/watch?v=oKm1zi85PYE")  # Substitua com o link do vídeo apropriado
 
     
 
