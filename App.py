@@ -115,7 +115,7 @@ def exibir_info_empresa(info, dividendos):
         else:
             st.write("Nenhum diretor encontrado.")
 
-    st.markdown("#### Preço")  
+    st.markdown("#### Análise de Preço")  
    
     with st.expander("Clique para assistir ao vídeo explicativo", expanded=False):
         st.video("https://www.youtube.com/watch?v=M1KWn0vFxeo")
@@ -183,7 +183,7 @@ exibir_info_empresa(info_acao, dividendos)
 df_valores = pegar_valores_online(sigla_acao_escolhida)
 
 # Criando gráfico de preços de fechamento e abertura
-st.subheader('Gráfico de Preços')
+st.subheader('Gráfico de Abertura e Fechamento')
 fig = go.Figure()
 
 fig.add_trace(go.Scatter(x=df_valores['Date'],
