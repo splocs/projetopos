@@ -4,7 +4,6 @@ matplotlib
 plotly
 pandas
 scikit-learn
-pandas_ta
 requests
 
 
