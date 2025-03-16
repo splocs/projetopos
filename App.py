@@ -103,8 +103,14 @@ else:
 # Gráfico comparativo da Selic e IBOV
 if not df_selic.empty and not df_ibov.empty:
     try:
-        # Garantir que ambos os DataFrames tenham o mesmo índice de data para a fusão
-        df_comparativo = pd.merge(df_selic, df_ibov, left_index=True, right_on='Date', how='inner')
+        # Alinhar as datas entre os dois DataFrames para o gráfico comparativo
+        df_selic = df_selic.reset_index()
+        df_ibov = df_ibov[['Date', 'IBOV']]  # Certificar que a coluna 'Date' é usada
+
+        # Realizar o merge com a coluna de data
+        df_comparativo = pd.merge(df_selic, df_ibov, left_on='Date', right_on='Date', how='inner')
+
+        # Criar o gráfico comparativo
         fig_comparativo = px.line(df_comparativo, x='Date', y=['Taxa Selic (%)', 'IBOV'], 
                                   title="Comparativo entre Taxa Selic e Índice Bovespa")
         fig_comparativo.update_layout(
