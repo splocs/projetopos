@@ -28,7 +28,7 @@ def carregar_dados_ibov():
     try:
         ibov = yf.download('^BVSP', start='2010-01-01', end=date.today(), progress=False)
         ibov = ibov[['Close']].rename(columns={'Close': 'IBOV'})
-        ibov.reset_index(inplace=True)  # Garantir que o índice seja resetado corretamente
+        ibov.reset_index(inplace=True)  # Resetando o índice para garantir que a coluna de data esteja correta
         return ibov
     except Exception as e:
         st.error(f"Erro ao carregar dados do IBOV: {e}")
