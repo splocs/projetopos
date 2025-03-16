@@ -28,7 +28,7 @@ def carregar_dados_ibov():
     try:
         ibov = yf.download('^BVSP', start='2010-01-01', end=date.today(), progress=False)
         ibov = ibov[['Close']].rename(columns={'Close': 'IBOV'})
-        ibov.reset_index(inplace=True)  # Resetando o índice para garantir que a coluna de data esteja correta
+        ibov.reset_index(inplace=True)  # Transforma o índice em coluna 'Date'
         return ibov
     except Exception as e:
         st.error(f"Erro ao carregar dados do IBOV: {e}")
@@ -69,8 +69,22 @@ if not df_selic.empty:
 else:
     st.warning("Nenhum dado disponível para o gráfico da Selic.")
 
+# Exibir o IBOV atual
+st.subheader("Índice Bovespa (IBOV)")
+if not df_ibov.empty:
+    try:
+        ultimo_ibov = float(df_ibov['IBOV'].iloc[-1])
+        if not pd.isna(ultimo_ibov):
+            ultima_data_ibov = df_ibov['Date'].iloc[-1].strftime('%d/%m/%Y')
+            st.write(f"IBOV Atual: {ultimo_ibov:.2f} pontos (Data: {ultima_data_ibov})")
+        else:
+            st.write("IBOV Atual: Dados indisponíveis (valor ausente)")
+    except Exception as e:
+        st.write(f"IBOV Atual: Erro ao processar dados ({e})")
+else:
+    st.write("IBOV Atual: Dados indisponíveis")
+
 # Gráfico do IBOV
-st.subheader("Índice Bovespa (IBOV) - Histórico desde 2010")
 if not df_ibov.empty:
     try:
         # Verificar os nomes das colunas do DataFrame para depuração
