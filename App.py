@@ -43,22 +43,22 @@ if df_selic.empty or df_ibov.empty:
     st.stop()
 
 # Exibir a Selic atual
-ultima_taxa = df_selic['Taxa Selic (%)'].iloc[-1]
-if pd.isna(ultima_taxa):
-    st.subheader("Selic Atual: Dados indisponíveis")
-else:
+if len(df_selic) > 0 and not pd.isna(df_selic['Taxa Selic (%)'].iloc[-1]):
+    ultima_taxa = float(df_selic['Taxa Selic (%)'].iloc[-1])  # Garante que é escalar
     ultima_data = df_selic.index[-1].strftime('%d/%m/%Y')
     st.subheader(f"Selic Atual: {ultima_taxa:.2f}%")
     st.write(f"Data: {ultima_data}")
+else:
+    st.subheader("Selic Atual: Dados indisponíveis")
 
 # Exibir o IBOV atual
-ultimo_ibov = df_ibov['IBOV'].iloc[-1]
-if pd.isna(ultimo_ibov):
-    st.subheader("IBOV Atual: Dados indisponíveis")
-else:
+if len(df_ibov) > 0 and not pd.isna(df_ibov['IBOV'].iloc[-1]):
+    ultimo_ibov = float(df_ibov['IBOV'].iloc[-1])  # Garante que é escalar
     ultima_data_ibov = df_ibov.index[-1].strftime('%d/%m/%Y')
     st.subheader(f"IBOV Atual: {ultimo_ibov:.2f} pontos")
     st.write(f"Data: {ultima_data_ibov}")
+else:
+    st.subheader("IBOV Atual: Dados indisponíveis")
 
 # Combinar os dados em um único DataFrame para alinhar as datas
 df_comparacao = df_selic.join(df_ibov, how='inner')
