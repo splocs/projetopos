@@ -3,6 +3,7 @@ import pandas as pd
 import yfinance as yf
 import plotly.graph_objects as go
 from bcb import sgs
+import investpy
 from datetime import date
 
 # Configuração do Streamlit
@@ -22,7 +23,7 @@ def carregar_dados_selic():
         st.error(f"Erro ao carregar dados da Selic: {e}")
         return pd.DataFrame()
 
-# Função para carregar os dados do IBOV
+# Função para carregar os dados do IBOV (mantido com yfinance)
 @st.cache_data
 def carregar_dados_ibov():
     try:
@@ -35,38 +36,42 @@ def carregar_dados_ibov():
         st.error(f"Erro ao carregar dados do IBOV: {e}")
         return pd.DataFrame()
 
-# Função para carregar os dados do IMOB
+# Função para carregar os dados do IMOB (usando investpy)
 @st.cache_data
 def carregar_dados_imob():
     try:
-        imob = yf.download('IMOB.SA', start='2010-01-01', end=date.today(), progress=False)
-        if imob.empty:
-            st.warning("Dados do IMOB retornaram vazios no Yahoo Finance com ticker 'IMOB.SA'.")
-            return pd.DataFrame()
-        imob = imob[['Close']]
+        imob = investpy.get_index_historical_data(
+            index='IMOB',
+            country='Brazil',
+            from_date='01/01/2010',
+            to_date=date.today().strftime('%d/%m/%Y')
+        )
+        imob = imob[['Close']].rename(columns={'Close': 'IMOB'})
         imob.reset_index(inplace=True)
         imob.columns = ['Date', 'IMOB']
-        st.write("Primeiras linhas do IMOB:", imob.head())  # Depuração
+        st.write("Primeiras linhas do IMOB (investpy):", imob.head())  # Depuração
         return imob
     except Exception as e:
-        st.error(f"Erro ao carregar dados do IMOB: {e}")
+        st.error(f"Erro ao carregar dados do IMOB com investpy: {e}")
         return pd.DataFrame()
 
-# Função para carregar os dados do IFIX
+# Função para carregar os dados do IFIX (usando investpy)
 @st.cache_data
 def carregar_dados_ifix():
     try:
-        ifix = yf.download('IFIX.SA', start='2010-01-01', end=date.today(), progress=False)
-        if ifix.empty:
-            st.warning("Dados do IFIX retornaram vazios no Yahoo Finance com ticker 'IFIX.SA'.")
-            return pd.DataFrame()
-        ifix = ifix[['Close']]
+        ifix = investpy.get_index_historical_data(
+            index='IFIX',
+            country='Brazil',
+            from_date='01/01/2010',
+            to_date=date.today().strftime('%d/%m/%Y')
+        )
+        ifix = ifix[['Close']].rename(columns={'Close': 'IFIX'})
         ifix.reset_index(inplace=True)
         ifix.columns = ['Date', 'IFIX']
-        st.write("Primeiras linhas do IFIX:", ifix.head())  # Depuração
+        st.write("Primeiras linhas do IFIX (investpy):", ifix.head())  # Depuração
         return ifix
     except Exception as e:
-        st.error(f"Erro ao carregar dados do IFIX: {e}")
+        st.error(f"Erro ao carregar dados do IFIX com investpy: {e}")
         return pd.DataFrame()
 
 # Carregar os dados
@@ -185,5 +190,4 @@ else:
     st.warning("Dados insuficientes para criar o gráfico comparativo.")
 
 # Fonte
-st.markdown("Fontes: Banco Central do Brasil (SGS) e Yahoo Finance")
-st.markdown("Nota: Os dados do IMOB podem não estar disponíveis no Yahoo Finance com o ticker 'IMOB.SA'.")
+st.markdown("Fontes: Banco Central do Brasil (SGS), Yahoo Finance (IBOV) e Investing.com (IMOB, IFIX via investpy)")
