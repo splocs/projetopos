@@ -2,17 +2,11 @@ import streamlit as st
 import pandas as pd
 import yfinance as yf
 from PIL import Image
-from datetime import date, datetime
+from datetime import date
 import plotly.express as px
 import plotly.graph_objects as go
-from functools import lru_cache
-import logging
 
-# Configuração de logging para monitoramento de erros
-logging.basicConfig(level=logging.INFO, filename='app.log', filemode='a',
-                    format='%(asctime)s - %(levelname)s - %(message)s')
-
-# Configuração inicial do Streamlit
+# Configurando a largura da página
 st.set_page_config(
     page_title="Plotos.com.br",
     page_icon="FAV.png",
@@ -21,185 +15,313 @@ st.set_page_config(
     menu_items={
         'Get Help': 'https://www.extremelycoolapp.com/help',
         'Report a bug': "https://www.extremelycoolapp.com/bug",
-        'About': "# Plotos - Análise Financeira Avançada"
+        'About': "# This is a header. This is an *extremely* cool app!"
     }
 )
 
-# Cache para dados que não mudam frequentemente
-@lru_cache(maxsize=128)
-def pegar_dados_acoes():
-    """Carrega lista de ações de um CSV hospedado no GitHub."""
-    try:
-        path = 'https://raw.githubusercontent.com/splocs/meu-repositorio/main/acoes.csv'
-        df = pd.read_csv(path, delimiter=';', encoding='utf-8')
-        return df
-    except Exception as e:
-        logging.error(f"Erro ao carregar dados das ações: {e}")
-        st.error("Erro ao carregar lista de ações. Tente novamente mais tarde.")
-        return pd.DataFrame()
-
-@lru_cache(maxsize=128)
-def pegar_info_empresa(sigla_acao):
-    """Obtém informações da empresa via yfinance com cache."""
-    try:
-        ticker = yf.Ticker(sigla_acao)
-        return ticker.info, ticker
-    except Exception as e:
-        logging.error(f"Erro ao obter info da empresa {sigla_acao}: {e}")
-        return {}, None
-
-@lru_cache(maxsize=128)
-def pegar_valores_online(sigla_acao, start_date, end_date):
-    """Baixa dados históricos de ações com cache."""
-    try:
-        df = yf.download(sigla_acao, start=start_date, end=end_date, progress=False)
-        df.reset_index(inplace=True)
-        return df
-    except Exception as e:
-        logging.error(f"Erro ao baixar valores de {sigla_acao}: {e}")
-        return pd.DataFrame()
-
-def configurar_grafico(fig, title, x_title='Data', y_title='Valor'):
-    """Configuração reutilizável para gráficos Plotly."""
+def configurar_grafico(fig):
     fig.update_layout(
-        title=title,
-        xaxis_title=x_title,
-        yaxis_title=y_title,
         showlegend=True,
-        xaxis_rangeslider_visible=False,
+        xaxis_title=None,
+        yaxis_title=None,
+        title_x=0.5,
+        title_y=0.9,
         margin=dict(l=20, r=20, t=50, b=20),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        template="plotly_white"
+        xaxis=dict(fixedrange=True),
+        yaxis=dict(fixedrange=True),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        ),
     )
     return {'displayModeBar': False, 'scrollZoom': False}
 
+def criar_grafico_dividendos(dividendos):
+    fig = px.bar(dividendos, x=dividendos.index, y='Dividends', title="Evolução dos Dividendos", 
+                  labels={'index': '', 'Dividends': ''}, color_discrete_sequence=['blue'])
+    fig.update_layout(
+        showlegend=False,
+        xaxis_title=None,
+        yaxis_title=None,
+        title_x=0.5,
+        title_y=0.9,
+        margin=dict(l=20, r=20, t=50, b=20),
+        xaxis=dict(fixedrange=True),
+        yaxis=dict(fixedrange=True)
+    )
+    fig.show(config={
+        'displayModeBar': False,
+        'scrollZoom': False
+    })
+    return fig
+
+def formatar_data(data):
+    if data is not None:
+        return pd.to_datetime(data, unit='s').strftime('%d-%m-%Y')
+    return 'N/A'
+
+def pegar_dados_acoes():
+    path = 'https://raw.githubusercontent.com/splocs/meu-repositorio/main/acoes.csv'
+    return pd.read_csv(path, delimiter=';')
+
+def pegar_valores_online(sigla_acao):
+    df = yf.download(sigla_acao, DATA_INICIO, DATA_FIM, progress=False)
+    df.reset_index(inplace=True)
+    return df
+
+def pegar_valores_online_periodo_definido(sigla_acao, data_inicio, data_fim):
+    df = yf.download(sigla_acao, data_inicio, data_fim, progress=False)
+    df.reset_index(inplace=True)
+    return df
+
 def calcular_estocastico_lento(df, n=14):
-    """Calcula o Estocástico Lento."""
     df['L14'] = df['Low'].rolling(window=n).min()
     df['H14'] = df['High'].rolling(window=n).max()
     df['%K'] = 100 * ((df['Close'] - df['L14']) / (df['H14'] - df['L14']))
     df['%D'] = df['%K'].rolling(window=3).mean()
-    return df.dropna()
-
-def calcular_indicadores_financeiros(df):
-    """Calcula indicadores financeiros adicionais."""
-    df['Retorno_Diario'] = df['Close'].pct_change()
-    df['Volatilidade_30d'] = df['Retorno_Diario'].rolling(window=30).std() * (252 ** 0.5)  # Anualizada
-    df['RSI'] = compute_rsi(df['Close'])
     return df
 
-def compute_rsi(close, periods=14):
-    """Calcula o RSI (Relative Strength Index)."""
-    delta = close.diff()
-    gain = (delta.where(delta > 0, 0)).rolling(window=periods).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(window=periods).mean()
-    rs = gain / loss
-    return 100 - (100 / (1 + rs))
+def pegar_info_empresa(sigla_acao):
+    ticker = yf.Ticker(sigla_acao)
+    info = ticker.info
+    return info, ticker
 
-def criar_grafico_dividendos(dividendos):
-    """Cria gráfico de dividendos."""
-    if dividendos.empty:
-        st.warning("Nenhum dado de dividendos disponível.")
-        return None
-    fig = px.bar(dividendos, x=dividendos.index, y='Dividends', title="Evolução dos Dividendos",
-                 labels={'index': 'Data', 'Dividends': 'Valor (R$)'}, color_discrete_sequence=['#1f77b4'])
-    config = configurar_grafico(fig, "Evolução dos Dividendos")
-    return fig
-
-def exibir_info_empresa(info, ticker):
-    """Exibe informações detalhadas da empresa."""
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        st.subheader(info.get('shortName', 'N/A'))
-        st.write(f"**Nome completo:** {info.get('longName', 'N/A')}")
-        st.write(f"**Setor:** {info.get('sector', 'N/A')} - **Indústria:** {info.get('industry', 'N/A')}")
-        st.write(f"**Site:** {info.get('website', 'N/A')}")
-        st.write(f"**Descrição:** {info.get('longBusinessSummary', 'N/A')[:500]}...")
+def exibir_info_empresa(info, dividendos):
+    st.write(f"{info.get('shortName', 'N/A')}") 
+    st.write(f"**Nome completo:** {info.get('longName', 'N/A')}")
+    st.write(f"**Endereço:** {info.get('address1', 'N/A')}")
+    st.write(f"**Cidade:** {info.get('city', 'N/A')}")
+    st.write(f"**Estado:** {info.get('state', 'N/A')}")
+    st.write(f"**País:** {info.get('country', 'N/A')}")
+    st.write(f"**CEP:** {info.get('zip', 'N/A')}")
+    st.write(f"**Telefone:** {info.get('phone', 'N/A')}")
+    st.write(f"**Site:** {info.get('website', 'N/A')}")      
+    st.write(f"**Setor:** {info.get('sector', 'N/A')}")
+    st.write(f"**Indústria:** {info.get('industry', 'N/A')}")
+    st.write(f"Moeda financeira: {info.get('financialCurrency', 'N/A')}")
+    st.write(f"**Descrição:** {info.get('longBusinessSummary', 'N/A')}")
     
-    with col2:
-        st.write(f"**Preço Atual:** {info.get('currentPrice', 'N/A')} {info.get('financialCurrency', 'N/A')}")
-        st.write(f"**Máxima 52 Semanas:** {info.get('fiftyTwoWeekHigh', 'N/A')}")
-        st.write(f"**Mínima 52 Semanas:** {info.get('fiftyTwoWeekLow', 'N/A')}")
-        st.write(f"**Dividend Yield:** {ticker.info.get('dividendYield', 0) * 100:.2f}%")
+    with st.expander("Diretores da Empresa", expanded=False):
+        directors = info.get('companyOfficers', [])
+        if directors:
+            for director in directors:
+                st.write(f"- **Nome:** {director.get('name', 'N/A')}")
+                st.write(f"  **Cargo:** {director.get('title', 'N/A')}")
+                st.write(f"  **Idade:** {director.get('age', 'N/A')}")
+                st.write(f"  **Ano de Nascimento:** {director.get('yearBorn', 'N/A')}")
+        else:
+            st.write("Nenhum diretor encontrado.")
 
-    with st.expander("Mais Detalhes Financeiros"):
-        st.write(f"**P/L Ratio:** {info.get('trailingPE', 'N/A')}")
-        st.write(f"**P/VP:** {info.get('priceToBook', 'N/A')}")
-        st.write(f"**ROE:** {info.get('returnOnEquity', 'N/A')}")
-        st.write(f"**Dívida Líquida/EBITDA:** {info.get('debtToEquity', 'N/A')}")
+    st.markdown("#### Análise de Preço")  
+   
+    with st.expander("Clique para assistir ao vídeo explicativo", expanded=False):
+        st.video("https://www.youtube.com/watch?v=M1KWn0vFxeo")
+    
+    st.write(f"**Preço atual:** {info.get('currentPrice', 'N/A')}")
+    st.write(f"**Preço Fechamento Anterior:** {info.get('previousClose', 'N/A')}")
+    st.write(f"**Preço Fechamento Anterior Mercado Regular:** {info.get('regularMarketPreviousClose', 'N/A')}")
+    st.write(f"**Preço de Compra Atual(Bid):** {info.get('bid', 'N/A')}")
+    st.write(f"**Preço de Venda Atual (Ask):** {info.get('ask', 'N/A')}")
+    st.write(f"**Preço Médio dos últimos 50 dias:** {info.get('fiftyDayAverage', 'N/A')}")
+    st.write(f"**Preço Médio dos últimos 200 dias:** {info.get('twoHundredDayAverage', 'N/A')}")
+    st.write(f"**Máxima das últimas 52 semanas:** {info.get('fiftyTwoWeekHigh', 'N/A')}")
 
-# Configurações globais
-DATA_INICIO_PADRAO = '2010-01-01'
-DATA_FIM_PADRAO = date.today().strftime('%Y-%m-%d')
+def configurar_grafico(fig):
+    fig.update_layout(title='Análise de Tendência de Longo Prazo',
+                   xaxis_title='Data',
+                   yaxis_title='Preço',
+                   xaxis_rangeslider_visible=False)
+    fig.update_layout(legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="right",
+        x=1
+    ))
+    return {'displayModeBar': False, 'scrollZoom': False}
 
-# Interface do Streamlit
-try:
-    logo = Image.open("logo.png")
-    st.image(logo, width=250)
-    st.sidebar.image(logo, width=150)
-except FileNotFoundError:
-    st.warning("Logo não encontrado. Certifique-se de que 'logo.png' está no diretório correto.")
+# Definindo data de início e fim
+DATA_INICIO = '2010-01-01'
+DATA_FIM = date.today().strftime('%Y-%m-%d')
 
-st.sidebar.markdown("### Configurações")
-df_acoes = pegar_dados_acoes()
-if df_acoes.empty:
-    st.stop()
+# Logo
+logo_path = "logo.png"
+logo = Image.open(logo_path)
 
-nome_acao = st.sidebar.selectbox("Escolha uma ação:", df_acoes['snome'])
-sigla_acao = df_acoes[df_acoes['snome'] == nome_acao]['sigla_acao'].iloc[0] + '.SA'
+# Exibir o logo no aplicativo Streamlit
+st.image(logo, width=250)
 
-data_inicio = st.sidebar.date_input("Data Início", datetime.strptime(DATA_INICIO_PADRAO, '%Y-%m-%d'))
-data_fim = st.sidebar.date_input("Data Fim", datetime.strptime(DATA_FIM_PADRAO, '%Y-%m-%d'))
+# Exibir o logo na sidebar
+st.sidebar.image(logo, width=150)
 
-# Carregar dados
-info, ticker = pegar_info_empresa(sigla_acao)
-df_valores = pegar_valores_online(sigla_acao, data_inicio.strftime('%Y-%m-%d'), data_fim.strftime('%Y-%m-%d'))
-if df_valores.empty:
-    st.error("Nenhum dado disponível para o período selecionado.")
-    st.stop()
+# Criando a sidebar
+st.sidebar.markdown('Escolha a ação')
 
-# Exibir informações
-st.header(f"Análise de {nome_acao}")
-exibir_info_empresa(info, ticker)
+# Pegando os dados das ações
+df = pegar_dados_acoes()
+acao = df['snome']
 
-# Gráfico de preços
-st.subheader("Histórico de Preços")
-fig_precos = go.Figure()
-fig_precos.add_trace(go.Scatter(x=df_valores['Date'], y=df_valores['Close'], name='Fechamento', line_color='blue'))
-fig_precos.add_trace(go.Scatter(x=df_valores['Date'], y=df_valores['Open'], name='Abertura', line_color='orange'))
-config = configurar_grafico(fig_precos, "Histórico de Preços", y_title="Preço (R$)")
-st.plotly_chart(fig_precos, use_container_width=True, config=config)
+nome_acao_escolhida = st.sidebar.selectbox('Escolha uma ação:', acao)
+df_acao = df[df['snome'] == nome_acao_escolhida]
+sigla_acao_escolhida = df_acao.iloc[0]['sigla_acao']
+sigla_acao_escolhida += '.SA'
 
-# Médias móveis e indicadores
-df_valores = calcular_indicadores_financeiros(df_valores)
-fig_medias = go.Figure()
-fig_medias.add_trace(go.Scatter(x=df_valores['Date'], y=df_valores['Close'], name='Fechamento', line_color='blue'))
-fig_medias.add_trace(go.Scatter(x=df_valores['Date'], y=df_valores['SMA_50'], name='SMA 50', line_color='red'))
-fig_medias.add_trace(go.Scatter(x=df_valores['Date'], y=df_valores['EMA_200'], name='EMA 200', line_color='green'))
-config = configurar_grafico(fig_medias, "Médias Móveis", y_title="Preço (R$)")
-st.plotly_chart(fig_medias, use_container_width=True, config=config)
+# Pegar e exibir as informações da empresa
+info_acao, ticker = pegar_info_empresa(sigla_acao_escolhida)
+st.header(f"Informações da ação: {nome_acao_escolhida}")
 
-# Gráfico de dividendos
+# Pegar e exibir o histórico de dividendos
 dividendos = ticker.dividends
-if not dividendos.empty:
-    fig_dividendos = criar_grafico_dividendos(dividendos)
-    st.plotly_chart(fig_dividendos, use_container_width=True, config=config)
 
-# Gráfico Estocástico e RSI
-df_mensal = df_valores.resample('M', on='Date').agg({'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last'}).dropna()
-df_mensal = calcular_estocastico_lento(df_mensal)
-fig_estocastico = go.Figure()
-fig_estocastico.add_trace(go.Scatter(x=df_mensal.index, y=df_mensal['%K'], name='%K', line_color='blue'))
-fig_estocastico.add_trace(go.Scatter(x=df_mensal.index, y=df_mensal['%D'], name='%D', line_color='red'))
-fig_estocastico.add_hline(y=80, line_dash="dash", line_color="green", annotation_text="Sobrecompra")
-fig_estocastico.add_hline(y=20, line_dash="dash", line_color="red", annotation_text="Sobrevenda")
-config = configurar_grafico(fig_estocastico, "Estocástico Lento (Mensal)")
-st.plotly_chart(fig_estocastico, use_container_width=True, config=config)
+# Exibir as informações da empresa e o histórico de dividendos
+exibir_info_empresa(info_acao, dividendos)
 
-# RSI
-fig_rsi = go.Figure()
-fig_rsi.add_trace(go.Scatter(x=df_valores['Date'], y=df_valores['RSI'], name='RSI', line_color='purple'))
-fig_rsi.add_hline(y=70, line_dash="dash", line_color="green", annotation_text="Sobrecompra")
-fig_rsi.add_hline(y=30, line_dash="dash", line_color="red", annotation_text="Sobrevenda")
-config = configurar_grafico(fig_rsi, "RSI (Índice de Força Relativa)")
-st.plotly_chart(fig_rsi, use_container_width=True, config=config)
+# Pegar os valores históricos da ação
+df_valores = pegar_valores_online(sigla_acao_escolhida)
+
+# Criando gráfico de preços de fechamento e abertura
+st.subheader('Gráfico de Abertura e Fechamento')
+fig = go.Figure()
+
+fig.add_trace(go.Scatter(x=df_valores['Date'],
+                         y=df_valores['Close'],
+                         name='Preço Fechamento',
+                         line_color='yellow'))
+
+fig.add_trace(go.Scatter(x=df_valores['Date'],
+                         y=df_valores['Open'],
+                         name='Preço Abertura',
+                         line_color='blue'))
+
+config = configurar_grafico(fig)
+st.plotly_chart(fig, use_container_width=False, config=config)
+
+# Adicionando expander com vídeo explicativo para Preço de Fechamento e Abertura
+with st.expander("Clique para assistir ao vídeo explicativo sobre Preço de Fechamento e Abertura", expanded=False):
+    st.video("https://www.youtube.com/watch?v=z59Rf9xNpFY")
+
+# Calculando as médias móveis simples (SMA) de 50 dias e 200 dias
+df_valores['SMA_50'] = df_valores['Close'].rolling(window=50).mean()
+df_valores['SMA_200'] = df_valores['Close'].rolling(window=200).mean()
+
+# Calculando as médias móveis exponenciais (EMA) de 50 dias e 200 dias
+df_valores['EMA_50'] = df_valores['Close'].ewm(span=50, adjust=False).mean()
+df_valores['EMA_200'] = df_valores['Close'].ewm(span=200, adjust=False).mean()
+
+# Criando o gráfico de preços com as médias móveis
+st.subheader('Gráfico com Médias Móveis')
+fig = go.Figure()
+
+# Adicionando os preços de fechamento
+fig.add_trace(go.Scatter(x=df_valores['Date'],
+                         y=df_valores['Close'],
+                         name='Preço Fechamento',
+                         line_color='blue'))
+
+# Adicionando as médias móveis simples
+fig.add_trace(go.Scatter(x=df_valores['Date'],
+                         y=df_valores['SMA_50'],
+                         name='SMA 50 (Tendência de curto prazo)',
+                         line_color='red'))
+
+fig.add_trace(go.Scatter(x=df_valores['Date'],
+                         y=df_valores['SMA_200'],
+                         name='SMA 200 (Tendência de longo prazo)',
+                         line_color='green'))
+
+# Adicionando as médias móveis exponenciais
+fig.add_trace(go.Scatter(x=df_valores['Date'],
+                         y=df_valores['EMA_50'],
+                         name='EMA 50 (Tendência de curto prazo)',
+                         line_color='purple'))
+
+fig.add_trace(go.Scatter(x=df_valores['Date'],
+                         y=df_valores['EMA_200'],
+                         name='EMA 200 (Tendência de longo prazo)',
+                         line_color='orange'))
+
+# Configurando layout do gráfico
+fig.update_layout(title='Análise de Tendência de Longo Prazo',
+                   xaxis_title='Data',
+                   yaxis_title='Preço',
+                   xaxis_rangeslider_visible=False)
+
+config = configurar_grafico(fig)
+st.plotly_chart(fig, use_container_width=False, config=config)
+
+
+
+# Determinando a tendência com base nas médias móveis
+tendencia = None
+if df_valores['Close'].iloc[-1] > df_valores['SMA_50'].iloc[-1] and df_valores['Close'].iloc[-1] > df_valores['SMA_200'].iloc[-1]:
+    tendencia = 'Tendência de alta'
+    explicacao_tendencia = "O preço de fechamento está acima das médias móveis de curto e longo prazo, sugerindo uma tendência de alta consistente."
+elif df_valores['Close'].iloc[-1] < df_valores['SMA_50'].iloc[-1] and df_valores['Close'].iloc[-1] < df_valores['SMA_200'].iloc[-1]:
+    tendencia = 'Tendência de baixa'
+    explicacao_tendencia = "O preço de fechamento está abaixo das médias móveis de curto e longo prazo, indicando uma tendência de baixa persistente."
+elif df_valores['Close'].iloc[-1] > df_valores['SMA_50'].iloc[-1] and df_valores['Close'].iloc[-1] < df_valores['SMA_200'].iloc[-1]:
+    tendencia = 'Tendência de alta em formação'
+    explicacao_tendencia = "O preço de fechamento está acima da média móvel de curto prazo, mas abaixo da média móvel de longo prazo, sugerindo uma possível tendência de alta em desenvolvimento."
+elif df_valores['Close'].iloc[-1] < df_valores['SMA_50'].iloc[-1] and df_valores['Close'].iloc[-1] > df_valores['SMA_200'].iloc[-1]:
+    tendencia = 'Tendência de baixa em formação'
+    explicacao_tendencia = "O preço de fechamento está abaixo da média móvel de curto prazo, mas acima da média móvel de longo prazo, indicando uma possível tendência de baixa em desenvolvimento."
+else:
+    tendencia = 'Estabilização ou acumulação'
+    explicacao_tendencia = "O preço de fechamento está entre as médias móveis de curto e longo prazo, sugerindo um período de estabilização ou acumulação no mercado."
+
+# Exibindo mensagem com a tendência e explicação
+st.markdown(f"A ação está atualmente em **{tendencia}**. {explicacao_tendencia}")
+
+# Adicionando expander com vídeo explicativo para Médias Móveis
+with st.expander("Clique para assistir ao vídeo explicativo sobre Médias Móveis", expanded=False):
+    st.video("https://www.youtube.com/watch?v=dUdYE2aIS00")
+
+# Convertendo os dados para frequência mensal
+df_valores_mensal = df_valores.resample('M', on='Date').agg({
+    'Open': 'first',
+    'High': 'max',
+    'Low': 'min',
+    'Close': 'last',
+    'Volume': 'sum'
+}).dropna()
+
+# Calculando o Estocástico Lento
+df_valores_mensal = calcular_estocastico_lento(df_valores_mensal)
+
+# Criando gráfico do Estocástico Lento
+st.subheader('Gráfico Estocástico Lento (Mensal)')
+fig = go.Figure()
+
+# %K
+fig.add_trace(go.Scatter(x=df_valores_mensal.index,
+                         y=df_valores_mensal['%K'],
+                         name='%K',
+                         line_color='blue'))
+
+# %D
+fig.add_trace(go.Scatter(x=df_valores_mensal.index,
+                         y=df_valores_mensal['%D'],
+                         name='%D',
+                         line_color='red'))
+
+# Linha de sobrecompra e sobrevenda
+fig.add_hline(y=80, line_dash="dash", line_color="green", annotation_text="Sobrecompra", annotation_position="top left")
+fig.add_hline(y=20, line_dash="dash", line_color="red", annotation_text="Sobrevenda", annotation_position="bottom left")
+
+# Configurando layout do gráfico
+fig.update_layout(title='Estocástico Lento (Mensal)',
+                   xaxis_title='Data',
+                   yaxis_title='Valor',
+                   xaxis_rangeslider_visible=False)
+
+config = configurar_grafico(fig)
+st.plotly_chart(fig, use_container_width=False, config=config)
+
+# Adicionando expander com vídeo explicativo para Estocástico Lento (a ser adicionado, se necessário)
+with st.expander("Clique para assistir ao vídeo explicativo sobre Estocástico Lento", expanded=False):
+    st.video("https://www.youtube.com/watch?v=oKm1zi85PYE")  # Substitua com o link do vídeo apropriado
+
+    
