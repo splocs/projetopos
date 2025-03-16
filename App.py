@@ -39,10 +39,16 @@ df_ibov = carregar_dados_ibov()
 
 # Exibir a Selic atual
 st.subheader("Taxa Selic")
-if not df_selic.empty and not pd.isna(df_selic['Taxa Selic (%)'].iloc[-1]):
-    ultima_taxa = float(df_selic['Taxa Selic (%)'].iloc[-1])
-    ultima_data = df_selic.index[-1].strftime('%d/%m/%Y')
-    st.write(f"Selic Atual: {ultima_taxa:.2f}% (Data: {ultima_data})")
+if not df_selic.empty:
+    try:
+        ultima_taxa = float(df_selic['Taxa Selic (%)'].iloc[-1])
+        if not pd.isna(ultima_taxa):
+            ultima_data = df_selic.index[-1].strftime('%d/%m/%Y')
+            st.write(f"Selic Atual: {ultima_taxa:.2f}% (Data: {ultima_data})")
+        else:
+            st.write("Selic Atual: Dados indisponíveis (valor ausente)")
+    except Exception as e:
+        st.write(f"Selic Atual: Erro ao processar dados ({e})")
 else:
     st.write("Selic Atual: Dados indisponíveis")
 
@@ -61,10 +67,16 @@ else:
 
 # Exibir o IBOV atual
 st.subheader("Índice Bovespa (IBOV)")
-if not df_ibov.empty and not pd.isna(df_ibov['IBOV'].iloc[-1]):
-    ultimo_ibov = float(df_ibov['IBOV'].iloc[-1])
-    ultima_data_ibov = df_ibov.index[-1].strftime('%d/%m/%Y')
-    st.write(f"IBOV Atual: {ultimo_ibov:.2f} pontos (Data: {ultima_data_ibov})")
+if not df_ibov.empty:
+    try:
+        ultimo_ibov = float(df_ibov['IBOV'].iloc[-1])
+        if not pd.isna(ultimo_ibov):
+            ultima_data_ibov = df_ibov.index[-1].strftime('%d/%m/%Y')
+            st.write(f"IBOV Atual: {ultimo_ibov:.2f} pontos (Data: {ultima_data_ibov})")
+        else:
+            st.write("IBOV Atual: Dados indisponíveis (valor ausente)")
+    except Exception as e:
+        st.write(f"IBOV Atual: Erro ao processar dados ({e})")
 else:
     st.write("IBOV Atual: Dados indisponíveis")
 
