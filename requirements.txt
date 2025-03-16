@@ -5,6 +5,7 @@ plotly
 pandas
 scikit-learn
 requests
-bcp
+python-bcb
+
 
 
