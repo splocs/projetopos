@@ -27,8 +27,10 @@ def carregar_dados_selic():
 def carregar_dados_ibov():
     try:
         ibov = yf.download('^BVSP', start='2010-01-01', end=date.today(), progress=False)
-        ibov = ibov[['Close']].rename(columns={'Close': 'IBOV'})
+        ibov = ibov[['Close']]  # Selecionar apenas a coluna 'Close'
         ibov.reset_index(inplace=True)  # Transforma o índice em coluna 'Date'
+        # Renomear explicitamente as colunas para evitar MultiIndex
+        ibov.columns = ['Date', 'IBOV']
         return ibov
     except Exception as e:
         st.error(f"Erro ao carregar dados do IBOV: {e}")
