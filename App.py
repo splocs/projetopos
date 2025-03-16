@@ -1,15 +1,15 @@
 import streamlit as st
 import pandas as pd
 import yfinance as yf
-import plotly.express as px
+import plotly.graph_objects as go
 from bcb import sgs
 from datetime import date
 
 # Configuração do Streamlit
-st.set_page_config(page_title="Selic, IBOV e IMOB - Histórico e Atual", layout="wide")
+st.set_page_config(page_title="Selic, IBOV e IMOB - Comparativo", layout="wide")
 
 # Título
-st.title("Taxa Selic, Índice Bovespa e Índice Imobiliário - Histórico e Atual")
+st.title("Taxa Selic, Índice Bovespa e Índice Imobiliário - Comparativo")
 
 # Função para carregar os dados da Selic
 @st.cache_data
@@ -39,7 +39,6 @@ def carregar_dados_ibov():
 @st.cache_data
 def carregar_dados_imob():
     try:
-        # Tentativa com ticker ajustado (IMOB não é padrão no Yahoo Finance, testando alternativas)
         imob = yf.download('IMOB.SA', start='2010-01-01', end=date.today(), progress=False)
         if imob.empty:
             st.warning("Dados do IMOB retornaram vazios no Yahoo Finance com ticker 'IMOB.SA'.")
@@ -73,22 +72,6 @@ if not df_selic.empty:
 else:
     st.write("Selic Atual: Dados indisponíveis")
 
-# Gráfico da Selic
-if not df_selic.empty:
-    try:
-        fig_selic = px.line(df_selic, x=df_selic.index, y='Taxa Selic (%)', 
-                            title="Histórico da Taxa Selic")
-        fig_selic.update_layout(
-            xaxis_title="Data",
-            yaxis_title="Taxa Selic (%)",
-            template="plotly_white"
-        )
-        st.plotly_chart(fig_selic, use_container_width=True)
-    except Exception as e:
-        st.warning(f"Erro ao criar gráfico da Selic: {e}")
-else:
-    st.warning("Nenhum dado disponível para o gráfico da Selic.")
-
 # Exibir o IBOV atual
 st.subheader("Índice Bovespa (IBOV)")
 if not df_ibov.empty:
@@ -103,22 +86,6 @@ if not df_ibov.empty:
         st.write(f"IBOV Atual: Erro ao processar dados ({e})")
 else:
     st.write("IBOV Atual: Dados indisponíveis")
-
-# Gráfico do IBOV
-if not df_ibov.empty:
-    try:
-        fig_ibov = px.line(df_ibov, x='Date', y='IBOV', 
-                           title="Histórico do Índice Bovespa desde 2010")
-        fig_ibov.update_layout(
-            xaxis_title="Data",
-            yaxis_title="IBOV (pontos)",
-            template="plotly_white"
-        )
-        st.plotly_chart(fig_ibov, use_container_width=True)
-    except Exception as e:
-        st.warning(f"Erro ao criar gráfico do IBOV: {e}")
-else:
-    st.warning("Nenhum dado disponível para o gráfico do IBOV.")
 
 # Exibir o IMOB atual
 st.subheader("Índice Imobiliário (IMOB)")
@@ -135,21 +102,47 @@ if not df_imob.empty:
 else:
     st.write("IMOB Atual: Dados indisponíveis")
 
-# Gráfico do IMOB
-if not df_imob.empty:
-    try:
-        fig_imob = px.line(df_imob, x='Date', y='IMOB', 
-                           title="Histórico do Índice Imobiliário desde 2010")
-        fig_imob.update_layout(
-            xaxis_title="Data",
-            yaxis_title="IMOB (pontos)",
-            template="plotly_white"
-        )
-        st.plotly_chart(fig_imob, use_container_width=True)
-    except Exception as e:
-        st.warning(f"Erro ao criar gráfico do IMOB: {e}")
+# Combinar os dados para o gráfico comparativo
+if not df_selic.empty and not df_ibov.empty:
+    # Converter df_ibov e df_imob para o mesmo formato de índice que df_selic
+    df_ibov_indexed = df_ibov.set_index('Date')
+    df_imob_indexed = df_imob.set_index('Date') if not df_imob.empty else pd.DataFrame()
+    
+    # Combinar os DataFrames com alinhamento por datas
+    df_comparacao = df_selic.join(df_ibov_indexed, how='inner')
+    if not df_imob_indexed.empty:
+        df_comparacao = df_comparacao.join(df_imob_indexed, how='inner')
+    
+    # Criar o gráfico comparativo
+    fig = go.Figure()
+
+    # Linha da Selic (eixo Y esquerdo)
+    fig.add_trace(go.Scatter(x=df_comparacao.index, y=df_comparacao['Taxa Selic (%)'],
+                             name='Selic (%)', line=dict(color='blue'), yaxis='y1'))
+
+    # Linha do IBOV (eixo Y direito)
+    fig.add_trace(go.Scatter(x=df_comparacao.index, y=df_comparacao['IBOV'],
+                             name='IBOV (pontos)', line=dict(color='green'), yaxis='y2'))
+
+    # Linha do IMOB (eixo Y direito, se disponível)
+    if 'IMOB' in df_comparacao.columns:
+        fig.add_trace(go.Scatter(x=df_comparacao.index, y=df_comparacao['IMOB'],
+                                 name='IMOB (pontos)', line=dict(color='orange'), yaxis='y2'))
+
+    # Configuração do layout com dois eixos Y
+    fig.update_layout(
+        title="Comparativo: Taxa Selic, IBOV e IMOB desde 2010",
+        xaxis_title="Data",
+        yaxis=dict(title="Taxa Selic (%)", side="left", color="blue"),
+        yaxis2=dict(title="Índices (pontos)", side="right", overlaying="y", color="green"),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        template="plotly_white"
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
 else:
-    st.warning("Nenhum dado disponível para o gráfico do IMOB.")
+    st.warning("Dados insuficientes para criar o gráfico comparativo.")
 
 # Fonte
 st.markdown("Fontes: Banco Central do Brasil (SGS) e Yahoo Finance")
+st.markdown("Nota: Os dados do IMOB podem não estar disponíveis no Yahoo Finance com o ticker 'IMOB.SA'.")
