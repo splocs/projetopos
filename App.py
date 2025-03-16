@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from bcb import sgs
 import yfinance as yf
-import plotly.express as px
+import plotly.graph_objects as go
 from datetime import date
 
 # Configuração do Streamlit
@@ -52,22 +52,6 @@ if not df_selic.empty:
 else:
     st.write("Selic Atual: Dados indisponíveis")
 
-# Gráfico da Selic
-if not df_selic.empty:
-    try:
-        fig_selic = px.line(df_selic, x=df_selic.index, y='Taxa Selic (%)', 
-                            title="Histórico da Taxa Selic")
-        fig_selic.update_layout(
-            xaxis_title="Data",
-            yaxis_title="Taxa Selic (%)",
-            template="plotly_white"
-        )
-        st.plotly_chart(fig_selic, use_container_width=True)
-    except Exception as e:
-        st.warning(f"Erro ao criar gráfico da Selic: {e}")
-else:
-    st.warning("Nenhum dado disponível para o gráfico da Selic.")
-
 # Exibir o IBOV atual
 st.subheader("Índice Bovespa (IBOV)")
 if not df_ibov.empty:
@@ -83,25 +67,44 @@ if not df_ibov.empty:
 else:
     st.write("IBOV Atual: Dados indisponíveis")
 
-# Gráfico do IBOV
-if not df_ibov.empty:
+# Plotar gráfico comparativo da Selic e do IBOV
+if not df_selic.empty and not df_ibov.empty:
     try:
-        # Resetar o índice e garantir que a coluna Date seja reconhecida
-        df_ibov_plot = df_ibov.reset_index()
-        # Verificar as colunas para depuração
-        st.write("Colunas do DataFrame IBOV:", df_ibov_plot.columns.tolist())
-        fig_ibov = px.line(df_ibov_plot, x='Date', y='IBOV', 
-                           title="Histórico do Índice Bovespa")
-        fig_ibov.update_layout(
+        # Alinhar as datas de Selic e IBOV
+        df_combined = pd.merge(df_selic, df_ibov, left_index=True, right_index=True, how='inner')
+
+        # Criar o gráfico com duas linhas: uma para a Selic e outra para o IBOV
+        fig = go.Figure()
+
+        # Linha da Selic
+        fig.add_trace(go.Scatter(x=df_combined.index, y=df_combined['Taxa Selic (%)'], 
+                                 mode='lines', name='Taxa Selic (%)', line=dict(color='blue')))
+
+        # Linha do IBOV
+        fig.add_trace(go.Scatter(x=df_combined.index, y=df_combined['IBOV'], 
+                                 mode='lines', name='Índice Bovespa (IBOV)', line=dict(color='green')))
+
+        # Adicionar títulos e configurações ao gráfico
+        fig.update_layout(
+            title="Comparativo Histórico entre Taxa Selic e Índice Bovespa (IBOV)",
             xaxis_title="Data",
-            yaxis_title="IBOV (pontos)",
-            template="plotly_white"
+            yaxis_title="Taxa Selic (%)",
+            template="plotly_white",
+            yaxis2=dict(
+                title="Índice Bovespa (IBOV)",
+                overlaying="y",
+                side="right"
+            ),
+            legend=dict(x=0.01, y=0.99)
         )
-        st.plotly_chart(fig_ibov, use_container_width=True)
+
+        # Exibir o gráfico
+        st.plotly_chart(fig, use_container_width=True)
+        
     except Exception as e:
-        st.warning(f"Erro ao criar gráfico do IBOV: {e}")
+        st.warning(f"Erro ao criar gráfico comparativo: {e}")
 else:
-    st.warning("Nenhum dado disponível para o gráfico do IBOV.")
+    st.warning("Não há dados suficientes para criar o gráfico comparativo.")
 
 # Fonte
 st.markdown("Fontes: Banco Central do Brasil (SGS) e Yahoo Finance")
