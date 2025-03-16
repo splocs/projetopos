@@ -5,4 +5,5 @@ plotly
 pandas
 scikit-learn
 pandas_ta
-bcb
+bcb==1.3.3
+
