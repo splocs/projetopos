@@ -11,16 +11,13 @@ def get_selic_historical():
         data = response.text.splitlines()
         df = pd.DataFrame([line.split(';') for line in data], columns=['Date', 'Selic'])
 
-        # Tentando converter a coluna de data sem especificar o formato
-        try:
-            df['Date'] = pd.to_datetime(df['Date'], errors='coerce', dayfirst=True)
-            df = df.dropna(subset=['Date'])  # Remove linhas onde a conversão falhou
-        except Exception as e:
-            st.error(f"Erro ao converter datas: {e}")
-            return pd.DataFrame()
+        # Converter as datas automaticamente sem especificar o formato
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
 
-        # Tratando a coluna Selic, substituindo vírgulas por ponto e convertendo para float
+        # Limpar os dados
         df['Selic'] = df['Selic'].str.replace(',', '.').astype(float)
+        df.dropna(inplace=True)  # Remove linhas com valores NaT (erro na data)
+        
         return df
     else:
         st.error(f"Erro ao acessar os dados históricos da Selic: {response.status_code}")
@@ -32,7 +29,7 @@ def get_selic_current():
     response = requests.get(url)
     if response.status_code == 200:
         data = response.text.splitlines()
-        if len(data) > 1:  # Verifica se há dados na resposta
+        if len(data) > 1:
             last_value = data[-1].split(';')[1]  # último valor da lista
             return float(last_value.replace(',', '.'))
         else:
