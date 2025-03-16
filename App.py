@@ -1,64 +1,45 @@
 import streamlit as st
-import requests
 import pandas as pd
-import matplotlib.pyplot as plt
+from bcb import sgs
+import plotly.express as px
+from datetime import date
 
-# Função para pegar a taxa Selic histórica
-def get_selic_historical():
-    url = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.11/dados?formato=csv"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.text.splitlines()
-        df = pd.DataFrame([line.split(';') for line in data], columns=['Date', 'Selic'])
+# Configuração do Streamlit
+st.set_page_config(page_title="Selic - Histórico e Atual", layout="wide")
 
-        # Converter as datas automaticamente sem especificar o formato
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+# Título
+st.title("Taxa Selic - Histórico e Atual")
 
-        # Limpar os dados
-        df['Selic'] = df['Selic'].str.replace(',', '.').astype(float)
-        df.dropna(inplace=True)  # Remove linhas com valores NaT (erro na data)
-        
-        return df
-    else:
-        st.error(f"Erro ao acessar os dados históricos da Selic: {response.status_code}")
+# Função para carregar os dados da Selic
+@st.cache_data
+def carregar_dados_selic():
+    try:
+        selic = sgs.get({'Selic': 432}, start='2010-01-01', end=date.today())
+        selic = selic.rename(columns={'Selic': 'Taxa Selic (%)'})
+        return selic
+    except Exception as e:
+        st.error(f"Erro ao carregar dados: {e}")
         return pd.DataFrame()
 
-# Função para pegar a taxa Selic atual
-def get_selic_current():
-    url = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.11/dados?formato=csv&dataInicial=01/01/2025&dataFinal=01/01/2025"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.text.splitlines()
-        if len(data) > 1:
-            last_value = data[-1].split(';')[1]  # último valor da lista
-            return float(last_value.replace(',', '.'))
-        else:
-            st.error("Não foi possível obter a taxa Selic atual.")
-            return None
-    else:
-        st.error(f"Erro ao acessar a taxa Selic atual: {response.status_code}")
-        return None
+# Carregar os dados
+df_selic = carregar_dados_selic()
 
-# Cabeçalho do app
-st.title("Taxa Selic Atual e Histórica")
+# Verificar se há dados
+if df_selic.empty:
+    st.warning("Nenhum dado disponível.")
+    st.stop()
 
-# Pegando a taxa Selic atual
-selic_atual = get_selic_current()
-if selic_atual is not None:
-    st.subheader(f"Taxa Selic Atual: {selic_atual:.2f}%")
+# Exibir a Selic atual
+ultima_taxa = df_selic['Taxa Selic (%)'].iloc[-1]
+ultima_data = df_selic.index[-1].strftime('%d/%m/%Y')
+st.subheader(f"Selic Atual: {ultima_taxa:.2f}%")
+st.write(f"Data: {ultima_data}")
 
-# Pegando o histórico da taxa Selic
-df_selic = get_selic_historical()
-if not df_selic.empty:
-    # Exibindo os dados históricos em tabela
-    st.subheader("Histórico da Taxa Selic")
-    st.dataframe(df_selic)
+# Gráfico simples do histórico
+st.subheader("Histórico da Selic")
+fig = px.line(df_selic, x=df_selic.index, y='Taxa Selic (%)', 
+              title="Evolução da Taxa Selic")
+st.plotly_chart(fig, use_container_width=True)
 
-    # Gráfico da taxa Selic histórica
-    st.subheader("Gráfico Histórico da Taxa Selic")
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(df_selic['Date'], df_selic['Selic'], color='blue')
-    ax.set_xlabel('Data')
-    ax.set_ylabel('Taxa Selic (%)')
-    ax.set_title('Histórico da Taxa Selic')
-    st.pyplot(fig)
+# Fonte
+st.markdown("Fonte: Banco Central do Brasil (SGS)")
