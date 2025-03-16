@@ -11,14 +11,15 @@ def get_selic_historical():
         data = response.text.splitlines()
         df = pd.DataFrame([line.split(';') for line in data], columns=['Date', 'Selic'])
 
-        # Tenta converter a coluna de data, sem especificar o formato, para lidar com diferentes padrões
+        # Tentando converter a coluna de data sem especificar o formato
         try:
-            df['Date'] = pd.to_datetime(df['Date'], errors='raise')  # Tenta conversão sem formato fixo
+            df['Date'] = pd.to_datetime(df['Date'], errors='coerce', dayfirst=True)
+            df = df.dropna(subset=['Date'])  # Remove linhas onde a conversão falhou
         except Exception as e:
             st.error(f"Erro ao converter datas: {e}")
             return pd.DataFrame()
 
-        # Tratar a coluna Selic, substituindo vírgulas por ponto e convertendo para float
+        # Tratando a coluna Selic, substituindo vírgulas por ponto e convertendo para float
         df['Selic'] = df['Selic'].str.replace(',', '.').astype(float)
         return df
     else:
