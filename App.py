@@ -37,25 +37,36 @@ def carregar_dados_ibov():
 df_selic = carregar_dados_selic()
 df_ibov = carregar_dados_ibov()
 
-# Verificar se há dados
+# Verificar se há dados válidos
 if df_selic.empty or df_ibov.empty:
-    st.warning("Dados insuficientes para exibição.")
+    st.warning("Dados insuficientes para exibição. Verifique os logs para mais detalhes.")
     st.stop()
 
 # Exibir a Selic atual
 ultima_taxa = df_selic['Taxa Selic (%)'].iloc[-1]
-ultima_data = df_selic.index[-1].strftime('%d/%m/%Y')
-st.subheader(f"Selic Atual: {ultima_taxa:.2f}%")
-st.write(f"Data: {ultima_data}")
+if pd.isna(ultima_taxa):
+    st.subheader("Selic Atual: Dados indisponíveis")
+else:
+    ultima_data = df_selic.index[-1].strftime('%d/%m/%Y')
+    st.subheader(f"Selic Atual: {ultima_taxa:.2f}%")
+    st.write(f"Data: {ultima_data}")
 
 # Exibir o IBOV atual
 ultimo_ibov = df_ibov['IBOV'].iloc[-1]
-ultima_data_ibov = df_ibov.index[-1].strftime('%d/%m/%Y')
-st.subheader(f"IBOV Atual: {ultimo_ibov:.2f} pontos")
-st.write(f"Data: {ultima_data_ibov}")
+if pd.isna(ultimo_ibov):
+    st.subheader("IBOV Atual: Dados indisponíveis")
+else:
+    ultima_data_ibov = df_ibov.index[-1].strftime('%d/%m/%Y')
+    st.subheader(f"IBOV Atual: {ultimo_ibov:.2f} pontos")
+    st.write(f"Data: {ultima_data_ibov}")
 
 # Combinar os dados em um único DataFrame para alinhar as datas
 df_comparacao = df_selic.join(df_ibov, how='inner')
+
+# Verificar se o DataFrame combinado tem dados
+if df_comparacao.empty:
+    st.warning("Nenhum dado disponível para o período comum entre Selic e IBOV.")
+    st.stop()
 
 # Gráfico com duas linhas (Selic e IBOV)
 st.subheader("Histórico: Selic vs IBOV")
