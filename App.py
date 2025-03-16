@@ -86,9 +86,9 @@ else:
 # Gráfico do IBOV
 if not df_ibov.empty:
     try:
-        # Resetar o índice e garantir nomes de colunas corretos
+        # Resetar o índice e garantir que a coluna Date seja reconhecida
         df_ibov_plot = df_ibov.reset_index()
-        # Verificar os nomes das colunas para depuração
+        # Verificar as colunas para depuração
         st.write("Colunas do DataFrame IBOV:", df_ibov_plot.columns.tolist())
         fig_ibov = px.line(df_ibov_plot, x='Date', y='IBOV', 
                            title="Histórico do Índice Bovespa")
