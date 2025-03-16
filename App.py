@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
-from bcb import sgs
 import yfinance as yf
 import plotly.express as px
+from bcb import sgs
 from datetime import date
 
 # Configuração do Streamlit
@@ -69,26 +69,12 @@ if not df_selic.empty:
 else:
     st.warning("Nenhum dado disponível para o gráfico da Selic.")
 
-# Exibir o IBOV atual
-st.subheader("Índice Bovespa (IBOV)")
-if not df_ibov.empty:
-    try:
-        ultimo_ibov = float(df_ibov['IBOV'].iloc[-1])
-        if not pd.isna(ultimo_ibov):
-            ultima_data_ibov = df_ibov['Date'].iloc[-1].strftime('%d/%m/%Y')  # Usar 'Date' ao invés de df_ibov.index
-            st.write(f"IBOV Atual: {ultimo_ibov:.2f} pontos (Data: {ultima_data_ibov})")
-        else:
-            st.write("IBOV Atual: Dados indisponíveis (valor ausente)")
-    except Exception as e:
-        st.write(f"IBOV Atual: Erro ao processar dados ({e})")
-else:
-    st.write("IBOV Atual: Dados indisponíveis")
-
 # Gráfico do IBOV
+st.subheader("Índice Bovespa (IBOV) - Histórico desde 2010")
 if not df_ibov.empty:
     try:
         fig_ibov = px.line(df_ibov, x='Date', y='IBOV', 
-                           title="Histórico do Índice Bovespa")
+                           title="Histórico do Índice Bovespa desde 2010")
         fig_ibov.update_layout(
             xaxis_title="Data",
             yaxis_title="IBOV (pontos)",
@@ -100,24 +86,5 @@ if not df_ibov.empty:
 else:
     st.warning("Nenhum dado disponível para o gráfico do IBOV.")
 
-# Gráfico comparativo da Selic e IBOV
-if not df_selic.empty and not df_ibov.empty:
-    try:
-        # Alinhar as datas entre os dois DataFrames para o gráfico comparativo
-        df_selic = df_selic.reset_index()
-        df_ibov = df_ibov[['Date', 'IBOV']]  # Certificar que a coluna 'Date' é usada
-
-        # Realizar o merge com a coluna de data
-        df_comparativo = pd.merge(df_selic, df_ibov, left_on='Date', right_on='Date', how='inner')
-
-        # Criar o gráfico comparativo
-        fig_comparativo = px.line(df_comparativo, x='Date', y=['Taxa Selic (%)', 'IBOV'], 
-                                  title="Comparativo entre Taxa Selic e Índice Bovespa")
-        fig_comparativo.update_layout(
-            xaxis_title="Data",
-            yaxis_title="Valores",
-            template="plotly_white"
-        )
-        st.plotly_chart(fig_comparativo, use_container_width=True)
-    except Exception as e:
-        st.warning(f"Erro ao criar gráfico comparativo: {e}")
+# Fonte
+st.markdown("Fontes: Banco Central do Brasil (SGS) e Yahoo Finance")
