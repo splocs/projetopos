@@ -6,10 +6,10 @@ from bcb import sgs
 from datetime import date
 
 # Configuração do Streamlit
-st.set_page_config(page_title="Selic, IBOV e IMOB - Comparativo", layout="wide")
+st.set_page_config(page_title="Selic, IBOV, IMOB e IFIX - Comparativo", layout="wide")
 
 # Título
-st.title("Taxa Selic, Índice Bovespa e Índice Imobiliário - Comparativo")
+st.title("Taxa Selic, Índice Bovespa, Índice Imobiliário e IFIX - Comparativo")
 
 # Função para carregar os dados da Selic
 @st.cache_data
@@ -52,10 +52,28 @@ def carregar_dados_imob():
         st.error(f"Erro ao carregar dados do IMOB: {e}")
         return pd.DataFrame()
 
+# Função para carregar os dados do IFIX
+@st.cache_data
+def carregar_dados_ifix():
+    try:
+        ifix = yf.download('IFIX.SA', start='2010-01-01', end=date.today(), progress=False)
+        if ifix.empty:
+            st.warning("Dados do IFIX retornaram vazios no Yahoo Finance com ticker 'IFIX.SA'.")
+            return pd.DataFrame()
+        ifix = ifix[['Close']]
+        ifix.reset_index(inplace=True)
+        ifix.columns = ['Date', 'IFIX']
+        st.write("Primeiras linhas do IFIX:", ifix.head())  # Depuração
+        return ifix
+    except Exception as e:
+        st.error(f"Erro ao carregar dados do IFIX: {e}")
+        return pd.DataFrame()
+
 # Carregar os dados
 df_selic = carregar_dados_selic()
 df_ibov = carregar_dados_ibov()
 df_imob = carregar_dados_imob()
+df_ifix = carregar_dados_ifix()
 
 # Exibir a Selic atual
 st.subheader("Taxa Selic")
@@ -102,16 +120,34 @@ if not df_imob.empty:
 else:
     st.write("IMOB Atual: Dados indisponíveis")
 
+# Exibir o IFIX atual
+st.subheader("Índice de Fundos Imobiliários (IFIX)")
+if not df_ifix.empty:
+    try:
+        ultimo_ifix = float(df_ifix['IFIX'].iloc[-1])
+        if not pd.isna(ultimo_ifix):
+            ultima_data_ifix = df_ifix['Date'].iloc[-1].strftime('%d/%m/%Y')
+            st.write(f"IFIX Atual: {ultimo_ifix:.2f} pontos (Data: {ultima_data_ifix})")
+        else:
+            st.write("IFIX Atual: Dados indisponíveis (valor ausente)")
+    except Exception as e:
+        st.write(f"IFIX Atual: Erro ao processar dados ({e})")
+else:
+    st.write("IFIX Atual: Dados indisponíveis")
+
 # Combinar os dados para o gráfico comparativo
 if not df_selic.empty and not df_ibov.empty:
-    # Converter df_ibov e df_imob para o mesmo formato de índice que df_selic
+    # Converter os DataFrames para o mesmo formato de índice que df_selic
     df_ibov_indexed = df_ibov.set_index('Date')
     df_imob_indexed = df_imob.set_index('Date') if not df_imob.empty else pd.DataFrame()
+    df_ifix_indexed = df_ifix.set_index('Date') if not df_ifix.empty else pd.DataFrame()
     
     # Combinar os DataFrames com alinhamento por datas
     df_comparacao = df_selic.join(df_ibov_indexed, how='inner')
     if not df_imob_indexed.empty:
         df_comparacao = df_comparacao.join(df_imob_indexed, how='inner')
+    if not df_ifix_indexed.empty:
+        df_comparacao = df_comparacao.join(df_ifix_indexed, how='inner')
     
     # Criar o gráfico comparativo
     fig = go.Figure()
@@ -129,9 +165,14 @@ if not df_selic.empty and not df_ibov.empty:
         fig.add_trace(go.Scatter(x=df_comparacao.index, y=df_comparacao['IMOB'],
                                  name='IMOB (pontos)', line=dict(color='orange'), yaxis='y2'))
 
+    # Linha do IFIX (eixo Y direito, se disponível)
+    if 'IFIX' in df_comparacao.columns:
+        fig.add_trace(go.Scatter(x=df_comparacao.index, y=df_comparacao['IFIX'],
+                                 name='IFIX (pontos)', line=dict(color='purple'), yaxis='y2'))
+
     # Configuração do layout com dois eixos Y
     fig.update_layout(
-        title="Comparativo: Taxa Selic, IBOV e IMOB desde 2010",
+        title="Comparativo: Taxa Selic, IBOV, IMOB e IFIX desde 2010",
         xaxis_title="Data",
         yaxis=dict(title="Taxa Selic (%)", side="left", color="blue"),
         yaxis2=dict(title="Índices (pontos)", side="right", overlaying="y", color="green"),
