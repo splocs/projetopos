@@ -86,8 +86,10 @@ else:
 # Gráfico do IBOV
 if not df_ibov.empty:
     try:
-        # Resetar o índice para garantir que Plotly use colunas explícitas
+        # Resetar o índice e garantir nomes de colunas corretos
         df_ibov_plot = df_ibov.reset_index()
+        # Verificar os nomes das colunas para depuração
+        st.write("Colunas do DataFrame IBOV:", df_ibov_plot.columns.tolist())
         fig_ibov = px.line(df_ibov_plot, x='Date', y='IBOV', 
                            title="Histórico do Índice Bovespa")
         fig_ibov.update_layout(
