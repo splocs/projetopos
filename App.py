@@ -39,10 +39,15 @@ def carregar_dados_ibov():
 @st.cache_data
 def carregar_dados_imob():
     try:
-        imob = yf.download('^IMOB', start='2010-01-01', end=date.today(), progress=False)
+        # Tentativa com ticker ajustado (IMOB não é padrão no Yahoo Finance, testando alternativas)
+        imob = yf.download('IMOB.SA', start='2010-01-01', end=date.today(), progress=False)
+        if imob.empty:
+            st.warning("Dados do IMOB retornaram vazios no Yahoo Finance com ticker 'IMOB.SA'.")
+            return pd.DataFrame()
         imob = imob[['Close']]
         imob.reset_index(inplace=True)
         imob.columns = ['Date', 'IMOB']
+        st.write("Primeiras linhas do IMOB:", imob.head())  # Depuração
         return imob
     except Exception as e:
         st.error(f"Erro ao carregar dados do IMOB: {e}")
