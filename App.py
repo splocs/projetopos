@@ -150,7 +150,7 @@ exibir_info_empresa(info_acao, ticker.dividends)
 
 # Carregar valores históricos
 df_valores = pegar_valores_online(sigla_acao_escolhida)
-if df_valores.empty or len(df_valores) < 200:  # Garante que há dados suficientes para SMA_200
+if df_valores.empty or len(df_valores) < 200:
     st.error("Dados insuficientes para análise. Tente outra ação ou período.")
     st.stop()
 
@@ -181,25 +181,30 @@ fig_medias.add_trace(go.Scatter(x=df_valores['Date'], y=df_valores['EMA_200'], n
 config = configurar_grafico(fig_medias, "Análise de Tendência com Médias Móveis", y_title="Preço (R$)")
 st.plotly_chart(fig_medias, use_container_width=True, config=config)
 
-# Tendência (com validação para NaN)
+# Tendência (com lógica robusta)
 tendencia = "Dados insuficientes para determinar tendência"
 explicacao_tendencia = "Não há dados suficientes ou as médias móveis ainda não foram calculadas para o período."
-if (len(df_valores) >= 200 and pd.notna(df_valores['SMA_50'].iloc[-1]) and pd.notna(df_valores['SMA_200'].iloc[-1])):
-    if df_valores['Close'].iloc[-1] > df_valores['SMA_50'].iloc[-1] and df_valores['Close'].iloc[-1] > df_valores['SMA_200'].iloc[-1]:
-        tendencia = 'Tendência de alta'
-        explicacao_tendencia = "O preço de fechamento está acima das médias móveis de curto e longo prazo, sugerindo uma tendência de alta consistente."
-    elif df_valores['Close'].iloc[-1] < df_valores['SMA_50'].iloc[-1] and df_valores['Close'].iloc[-1] < df_valores['SMA_200'].iloc[-1]:
-        tendencia = 'Tendência de baixa'
-        explicacao_tendencia = "O preço de fechamento está abaixo das médias móveis de curto e longo prazo, indicando uma tendência de baixa persistente."
-    elif df_valores['Close'].iloc[-1] > df_valores['SMA_50'].iloc[-1] and df_valores['Close'].iloc[-1] < df_valores['SMA_200'].iloc[-1]:
-        tendencia = 'Tendência de alta em formação'
-        explicacao_tendencia = "O preço de fechamento está acima da média móvel de curto prazo, mas abaixo da média móvel de longo prazo, sugerindo uma possível tendência de alta em desenvolvimento."
-    elif df_valores['Close'].iloc[-1] < df_valores['SMA_50'].iloc[-1] and df_valores['Close'].iloc[-1] > df_valores['SMA_200'].iloc[-1]:
-        tendencia = 'Tendência de baixa em formação'
-        explicacao_tendencia = "O preço de fechamento está abaixo da média móvel de curto prazo, mas acima da média móvel de longo prazo, indicando uma possível tendência de baixa em desenvolvimento."
-    else:
-        tendencia = 'Estabilização ou acumulação'
-        explicacao_tendencia = "O preço de fechamento está entre as médias móveis de curto e longo prazo, sugerindo um período de estabilização ou acumulação no mercado."
+if len(df_valores) >= 200:
+    ultimo_close = df_valores['Close'].iloc[-1]
+    ultimo_sma_50 = df_valores['SMA_50'].iloc[-1]
+    ultimo_sma_200 = df_valores['SMA_200'].iloc[-1]
+    
+    if pd.notna(ultimo_close) and pd.notna(ultimo_sma_50) and pd.notna(ultimo_sma_200):
+        if ultimo_close > ultimo_sma_50 and ultimo_close > ultimo_sma_200:
+            tendencia = 'Tendência de alta'
+            explicacao_tendencia = "O preço de fechamento está acima das médias móveis de curto e longo prazo, sugerindo uma tendência de alta consistente."
+        elif ultimo_close < ultimo_sma_50 and ultimo_close < ultimo_sma_200:
+            tendencia = 'Tendência de baixa'
+            explicacao_tendencia = "O preço de fechamento está abaixo das médias móveis de curto e longo prazo, indicando uma tendência de baixa persistente."
+        elif ultimo_close > ultimo_sma_50 and ultimo_close < ultimo_sma_200:
+            tendencia = 'Tendência de alta em formação'
+            explicacao_tendencia = "O preço de fechamento está acima da média móvel de curto prazo, mas abaixo da média móvel de longo prazo, sugerindo uma possível tendência de alta em desenvolvimento."
+        elif ultimo_close < ultimo_sma_50 and ultimo_close > ultimo_sma_200:
+            tendencia = 'Tendência de baixa em formação'
+            explicacao_tendencia = "O preço de fechamento está abaixo da média móvel de curto prazo, mas acima da média móvel de longo prazo, indicando uma possível tendência de baixa em desenvolvimento."
+        else:
+            tendencia = 'Estabilização ou acumulação'
+            explicacao_tendencia = "O preço de fechamento está entre as médias móveis de curto e longo prazo, sugerindo um período de estabilização ou acumulação no mercado."
 
 st.markdown(f"A ação está atualmente em **{tendencia}**. {explicacao_tendencia}")
 with st.expander("Clique para assistir ao vídeo explicativo sobre Médias Móveis", expanded=False):
@@ -227,5 +232,5 @@ with st.expander("Clique para assistir ao vídeo explicativo sobre Estocástico 
 dividendos = ticker.dividends
 if not dividendos.empty:
     fig_dividendos = criar_grafico_dividendos(dividendos)
-    if fig_dividendos:  # Verifica se o gráfico foi criado
+    if fig_dividendos:
         st.plotly_chart(fig_dividendos, use_container_width=True, config=config)
