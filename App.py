@@ -73,6 +73,8 @@ else:
 st.subheader("Índice Bovespa (IBOV) - Histórico desde 2010")
 if not df_ibov.empty:
     try:
+        # Verificar os nomes das colunas do DataFrame para depuração
+        st.write("Colunas do DataFrame IBOV:", df_ibov.columns.tolist())
         fig_ibov = px.line(df_ibov, x='Date', y='IBOV', 
                            title="Histórico do Índice Bovespa desde 2010")
         fig_ibov.update_layout(
