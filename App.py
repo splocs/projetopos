@@ -43,7 +43,7 @@ if df_selic.empty or df_ibov.empty:
     st.stop()
 
 # Exibir a Selic atual
-if len(df_selic) > 0 and not pd.isna(df_selic['Taxa Selic (%)'].iloc[-1]):
+if not df_selic.empty and not pd.isna(df_selic['Taxa Selic (%)'].iloc[-1]):
     ultima_taxa = float(df_selic['Taxa Selic (%)'].iloc[-1])  # Garante que é escalar
     ultima_data = df_selic.index[-1].strftime('%d/%m/%Y')
     st.subheader(f"Selic Atual: {ultima_taxa:.2f}%")
@@ -52,7 +52,7 @@ else:
     st.subheader("Selic Atual: Dados indisponíveis")
 
 # Exibir o IBOV atual
-if len(df_ibov) > 0 and not pd.isna(df_ibov['IBOV'].iloc[-1]):
+if not df_ibov.empty and not pd.isna(df_ibov['IBOV'].iloc[-1]):
     ultimo_ibov = float(df_ibov['IBOV'].iloc[-1])  # Garante que é escalar
     ultima_data_ibov = df_ibov.index[-1].strftime('%d/%m/%Y')
     st.subheader(f"IBOV Atual: {ultimo_ibov:.2f} pontos")
