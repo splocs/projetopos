@@ -54,14 +54,17 @@ else:
 
 # Gráfico da Selic
 if not df_selic.empty:
-    fig_selic = px.line(df_selic, x=df_selic.index, y='Taxa Selic (%)', 
-                        title="Histórico da Taxa Selic")
-    fig_selic.update_layout(
-        xaxis_title="Data",
-        yaxis_title="Taxa Selic (%)",
-        template="plotly_white"
-    )
-    st.plotly_chart(fig_selic, use_container_width=True)
+    try:
+        fig_selic = px.line(df_selic, x=df_selic.index, y='Taxa Selic (%)', 
+                            title="Histórico da Taxa Selic")
+        fig_selic.update_layout(
+            xaxis_title="Data",
+            yaxis_title="Taxa Selic (%)",
+            template="plotly_white"
+        )
+        st.plotly_chart(fig_selic, use_container_width=True)
+    except Exception as e:
+        st.warning(f"Erro ao criar gráfico da Selic: {e}")
 else:
     st.warning("Nenhum dado disponível para o gráfico da Selic.")
 
@@ -82,14 +85,19 @@ else:
 
 # Gráfico do IBOV
 if not df_ibov.empty:
-    fig_ibov = px.line(df_ibov, x=df_ibov.index, y='IBOV', 
-                       title="Histórico do Índice Bovespa")
-    fig_ibov.update_layout(
-        xaxis_title="Data",
-        yaxis_title="IBOV (pontos)",
-        template="plotly_white"
-    )
-    st.plotly_chart(fig_ibov, use_container_width=True)
+    try:
+        # Resetar o índice para garantir que Plotly use colunas explícitas
+        df_ibov_plot = df_ibov.reset_index()
+        fig_ibov = px.line(df_ibov_plot, x='Date', y='IBOV', 
+                           title="Histórico do Índice Bovespa")
+        fig_ibov.update_layout(
+            xaxis_title="Data",
+            yaxis_title="IBOV (pontos)",
+            template="plotly_white"
+        )
+        st.plotly_chart(fig_ibov, use_container_width=True)
+    except Exception as e:
+        st.warning(f"Erro ao criar gráfico do IBOV: {e}")
 else:
     st.warning("Nenhum dado disponível para o gráfico do IBOV.")
 
