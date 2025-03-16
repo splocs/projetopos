@@ -220,5 +220,4 @@ if not df_selic.empty and not df_ibov.empty:
 else:
     st.warning("Não há dados suficientes para criar o gráfico comparativo.")
 
-# Fonte
-st.markdown("Fontes: Banco Central do Brasil (SGS) e Yahoo Finance")
+
